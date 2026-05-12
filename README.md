@@ -11,9 +11,9 @@ Sistema de autenticación y autorización para una plataforma tipo LeetCode. Usa
 
 ## Stack
 
-- **AWS:** CDK, ECS Fargate, RDS PostgreSQL, API Gateway HTTP API con JWT Authorizer, Secrets Manager.
+- **AWS:** CDK, EC2 (Authentik), API Gateway HTTP API con JWT Authorizer, Secrets Manager.
 - **Frontend:** React 18 + TypeScript + Vite, `react-oidc-context`.
-- **Identity Provider:** Authentik (self-hosted en ECS Fargate).
+- **Identity Provider:** Authentik (self-hosted en una EC2 con docker-compose; Postgres y Redis viven como contenedores dentro del mismo host).
 - **Tests E2E:** Playwright.
 
 ## Prerequisitos
@@ -71,14 +71,25 @@ Desde `infra/`:
 
 ## Stacks actuales
 
-- **NetworkStack** — VPC con subnets public/app/data en 2 AZ y 1 NAT Gateway.
+- **NetworkStack** — VPC con una subnet pública en 1 AZ. Sin NAT Gateway (la EC2 sale a Internet directo).
 - **SecretsStack** — `AUTHENTIK_SECRET_KEY` y client secret OIDC en Secrets Manager.
-- **DatabaseStack** — RDS PostgreSQL para Authentik con credenciales auto-rotadas cada 30 días.
+- **AuthentikStack** — EC2 `t4g.small` con Elastic IP y volumen EBS encriptado. Un UserData instala Docker, baja el `docker-compose.yml` desde S3 (asset CDK) y levanta Authentik server + worker + Postgres + Redis.
 
 ## Costos aproximados (dev)
 
-- NAT Gateway: ~$32/mes.
-- RDS t4g.micro: ~$13/mes.
-- ECS Fargate (al añadir Authentik): ~$15/mes idle.
+- EC2 t4g.small: ~$15/mes.
+- EBS gp3 20 GB: ~$1.6/mes.
+- Elastic IP (mientras esté asociada): $0.
+- Secrets Manager (2 secretos): ~$0.80/mes.
 
-Ejecutar `cdk destroy --all` al terminar la sesión para evitar costos innecesarios.
+Total: ~$17–20/mes. Ejecutar `cdk destroy --all` al terminar la sesión para no acumular costos.
+
+## Acceder a Authentik
+
+Después del primer `cdk deploy`, el output `AuthentikStack.AuthentikUrl` muestra la URL pública (http://<EIP>:9000). La inicialización del contenedor toma ~3 minutos. Para diagnosticar:
+
+```bash
+aws ssm start-session --target <instance-id>
+cd /opt/authentik
+docker compose logs --tail=100 -f server
+```
