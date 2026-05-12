@@ -6,7 +6,9 @@
   "scripts": {
     "prepare": "husky",
     "lint:infra": "npm --prefix infra run lint",
-    "format:infra": "npm --prefix infra run format:check"
+    "format:infra": "npm --prefix infra run format:check",
+    "lint:frontend": "npm --prefix frontend run lint",
+    "format:frontend": "npm --prefix frontend run format:check"
   },
   "lint-staged": {
     "infra/**/*.{ts,mjs,cjs,js}": [
@@ -14,6 +16,12 @@
     ],
     "infra/**/*.{json,md,yml,yaml}": [
       "prettier --write --config infra/.prettierrc.json"
+    ],
+    "frontend/**/*.{ts,tsx,js,jsx,mjs,cjs}": [
+      "prettier --write --config frontend/.prettierrc.json"
+    ],
+    "frontend/**/*.{json,md,css,html}": [
+      "prettier --write --config frontend/.prettierrc.json"
     ],
     "*.{md,json,yml,yaml}": [
       "prettier --write"
