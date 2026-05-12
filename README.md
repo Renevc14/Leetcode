@@ -74,6 +74,7 @@ Desde `infra/`:
 - **NetworkStack** — VPC con una subnet pública en 1 AZ. Sin NAT Gateway (la EC2 sale a Internet directo).
 - **SecretsStack** — `AUTHENTIK_SECRET_KEY` y client secret OIDC en Secrets Manager.
 - **AuthentikStack** — EC2 `t4g.small` con Elastic IP y volumen EBS encriptado. Un UserData instala Docker, baja el `docker-compose.yml` desde S3 (asset CDK) y levanta Authentik server + worker + Postgres + Redis.
+- **ApiGatewayStack** — HTTP API con JWT Authorizer apuntando al issuer OIDC de Authentik (`http://<EIP>:9000/application/o/leetcode/`). Expone `GET /v1/me` con una Lambda mock que devuelve los claims `sub`, `email`, `name` y `roles` del token.
 
 ## Costos aproximados (dev)
 
@@ -81,8 +82,18 @@ Desde `infra/`:
 - EBS gp3 20 GB: ~$1.6/mes.
 - Elastic IP (mientras esté asociada): $0.
 - Secrets Manager (2 secretos): ~$0.80/mes.
+- HTTP API + Lambda: ~$0 (free tier cubre desarrollo).
 
 Total: ~$17–20/mes. Ejecutar `cdk destroy --all` al terminar la sesión para no acumular costos.
+
+## Orden de despliegue
+
+El `ApiGatewayStack` necesita que Authentik tenga la aplicación OIDC `leetcode` configurada (porque el JWT Authorizer hace OIDC discovery contra `<issuer>/.well-known/openid-configuration` al desplegar). Por eso el orden es:
+
+1. `cdk deploy NetworkStack SecretsStack AuthentikStack` — levanta Authentik.
+2. Esperar ~3 minutos a que arranquen los contenedores.
+3. Abrir `http://<EIP>:9000`, completar el flujo inicial de Authentik y crear la aplicación OIDC con slug `leetcode` (matchea el `audience` que espera el authorizer).
+4. `cdk deploy ApiGatewayStack` — ahora el discovery contra Authentik funciona.
 
 ## Acceder a Authentik
 
