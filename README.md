@@ -5,7 +5,7 @@ Sistema de autenticación y autorización para una plataforma tipo LeetCode. Usa
 ## Estructura del monorepo
 
 - `infra/` — Infraestructura como código con AWS CDK en TypeScript.
-- `frontend/` — SPA en React 18 + Vite (pendiente).
+- `frontend/` — SPA en React 19 + Vite + TypeScript con OIDC + PKCE y RBAC.
 - `scripts/` — Utilidades operativas (pendiente).
 - `docs/` — Documentación técnica (pendiente).
 
@@ -28,11 +28,25 @@ Sistema de autenticación y autorización para una plataforma tipo LeetCode. Usa
 # Dependencias de la raíz (husky, lint-staged, prettier)
 npm install
 
-# Dependencias de infraestructura
+# Dependencias de infraestructura y frontend
 npm --prefix infra install
+npm --prefix frontend install
 ```
 
-El pre-commit hook de husky ejecuta `lint-staged` automáticamente y formatea con Prettier los archivos modificados.
+El pre-commit hook de husky ejecuta `lint-staged` automáticamente y formatea con Prettier los archivos modificados (de raíz, `infra/` y `frontend/`).
+
+### Variables de entorno del frontend
+
+Copia `frontend/.env.example` a `frontend/.env` y completa los valores:
+
+- `VITE_AUTH_AUTHORITY` — URL del issuer OIDC de Authentik (output `IssuerUrl` del `ApiGatewayStack`).
+- `VITE_AUTH_CLIENT_ID` — Client ID configurado en la aplicación OIDC (por defecto `leetcode`).
+- `VITE_AUTH_REDIRECT_URI` — Para dev: `http://localhost:5173/auth/callback`.
+- `VITE_API_BASE_URL` — Output `ApiUrl` del `ApiGatewayStack`.
+
+```bash
+npm --prefix frontend run dev   # http://localhost:5173
+```
 
 ## Comandos de infraestructura
 
