@@ -1,3 +1,54 @@
+# Materiales del curso (no van al repositorio)
 instrucciones.md
 /Pt1/
 
+# Logs
+logs/
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+
+# Dependencias
+node_modules/
+.pnp
+.pnp.js
+
+# Build / outputs
+dist/
+build/
+out/
+*.tsbuildinfo
+
+# Entornos (nunca commitear .env con valores reales)
+.env
+.env.local
+.env.*.local
+!.env.example
+
+# Editor / OS
+.DS_Store
+Thumbs.db
+.vscode/*
+!.vscode/settings.json
+!.vscode/extensions.json
+.idea/
+*.swp
+*.swo
+
+# AWS CDK
+.cdk.staging/
+cdk.out/
+
+# Cache / coverage
+.cache/
+.parcel-cache/
+.turbo/
+coverage/
+.nyc_output/
+
+# Tests
+playwright-report/
+test-results/
+playwright/.cache/
