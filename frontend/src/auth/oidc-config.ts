@@ -6,7 +6,7 @@ export const oidcConfig: AuthProviderProps = {
   authority: env.VITE_AUTH_AUTHORITY,
   client_id: env.VITE_AUTH_CLIENT_ID,
   redirect_uri: env.VITE_AUTH_REDIRECT_URI,
-  scope: 'openid profile email offline_access',
+  scope: 'openid profile email roles offline_access',
   response_type: 'code',
   loadUserInfo: true,
   automaticSilentRenew: true,
