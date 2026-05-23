@@ -1,6 +1,6 @@
 # Configuración manual de Authentik
 
-> Esta guía es un **fallback**. Normalmente el blueprint `infra/assets/authentik/blueprints/leetcode.yaml` hace todo esto solo al arrancar el container. Úsala si:
+> Esta guía es un **fallback**. Normalmente el blueprint `assets/authentik/blueprints/leetcode.yaml` (en el repo [AWS_Leetcode](https://github.com/Renevc14/AWS_Leetcode)) hace todo esto solo al arrancar el container. Úsala si:
 >
 > - El blueprint falló (ver logs del worker en `docker compose logs worker | grep blueprint`).
 > - Necesitás modificar la config en una instancia ya corriendo.
@@ -117,7 +117,7 @@ Si no incluye `roles`, el mapper no está asociado al provider — volver al pas
 
 ## Renombrar/agregar al blueprint
 
-Si modificás algo manualmente y querés que sobreviva a un re-deploy, agrega/edita la entry correspondiente en `infra/assets/authentik/blueprints/leetcode.yaml`. Los modelos relevantes:
+Si modificás algo manualmente y querés que sobreviva a un re-deploy, agrega/edita la entry correspondiente en `AWS_Leetcode/assets/authentik/blueprints/leetcode.yaml`. Los modelos relevantes:
 
 - `authentik_core.group`
 - `authentik_core.user`
