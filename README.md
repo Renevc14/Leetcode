@@ -102,12 +102,30 @@ Total: ~$17–20/mes. Ejecutar `cdk destroy --all` al terminar la sesión para n
 
 ## Orden de despliegue
 
-El `ApiGatewayStack` necesita que Authentik tenga la aplicación OIDC `leetcode` configurada (porque el JWT Authorizer hace OIDC discovery contra `<issuer>/.well-known/openid-configuration` al desplegar). Por eso el orden es:
+El `AuthentikStack` despliega Authentik y aplica un **blueprint** (`infra/assets/authentik/blueprints/leetcode.yaml`) que crea automáticamente:
 
-1. `cdk deploy NetworkStack SecretsStack AuthentikStack` — levanta Authentik.
-2. Esperar ~3 minutos a que arranquen los contenedores.
-3. Abrir `http://<EIP>:9000`, completar el flujo inicial de Authentik y crear la aplicación OIDC con slug `leetcode` (matchea el `audience` que espera el authorizer).
-4. `cdk deploy ApiGatewayStack` — ahora el discovery contra Authentik funciona.
+- 3 grupos: `USER`, `SETTER`, `ADMIN`.
+- Property mapping `Roles Mapping` (scope `roles`).
+- Provider OIDC `leetcode-provider` (PKCE, redirect a `http://localhost:5173/auth/callback`).
+- Application `LeetCode` (slug `leetcode`) con bindings a los 3 grupos.
+- 3 usuarios de prueba (`test-user`, `test-setter`, `test-admin`) con password `Test123!` y grupos en cascada.
+
+Por eso el orden es:
+
+1. `cdk deploy NetworkStack SecretsStack AuthentikStack` — levanta Authentik + aplica el blueprint.
+2. Esperar ~3 minutos a que arranquen los contenedores y el worker procese el blueprint.
+3. (Solo la primera vez) Generar el password de `akadmin` desde la EC2 vía SSM:
+
+   ```bash
+   aws ssm send-command --instance-ids <id> --document-name AWS-RunShellScript \
+     --parameters 'commands=["cd /opt/authentik && docker compose exec -T worker ak create_recovery_key 24 akadmin"]'
+   ```
+
+   El output trae una URL de recovery — abrila en el browser para setear el password.
+
+4. `cdk deploy ApiGatewayStack` — hace OIDC discovery contra el provider que el blueprint ya creó.
+
+> Las claves seteadas en el blueprint (`Test123!`) son **demo only**. Para producción, generar passwords via env vars del container o flow de password reset.
 
 ## Acceder a Authentik
 
