@@ -1,6 +1,17 @@
 # Setup y despliegue
 
-Guía paso a paso desde cero. Asume Windows con Git Bash o PowerShell; Linux/macOS es equivalente con paths nativos.
+Guía paso a paso desde cero. El proyecto vive en **dos repos**:
+
+- `Renevc14/Leetcode` (este) — frontend + documentación.
+- `Renevc14/AWS_Leetcode` — infraestructura AWS CDK.
+
+Cloná los dos lado a lado en el mismo directorio padre:
+
+```
+proyecto/
+├── Leetcode/         # frontend, docs
+└── AWS_Leetcode/     # infra CDK
+```
 
 ## Prerequisitos
 
@@ -10,55 +21,60 @@ Guía paso a paso desde cero. Asume Windows con Git Bash o PowerShell; Linux/mac
 
   ```bash
   aws configure
-  # AWS Access Key ID:       <tu access key>
-  # AWS Secret Access Key:   <tu secret>
-  # Default region name:     us-east-1
-  # Default output format:   json
-
   aws sts get-caller-identity   # debe devolver tu cuenta
   ```
 
 - **GitHub CLI** (`gh`) opcional pero útil para abrir PRs sin salir del terminal.
 - **git** configurado con `user.name` y `user.email`.
 
-## Setup local
+## Clonar y instalar
 
 ```bash
+mkdir proyecto && cd proyecto
+
+# Repo principal (frontend + docs)
 git clone https://github.com/Renevc14/Leetcode.git
 cd Leetcode
-
-# Dependencias de la raíz (husky, lint-staged, prettier)
 npm install
-
-# Dependencias de infra y frontend
-npm --prefix infra install
 npm --prefix frontend install
+cd ..
+
+# Repo de infra
+git clone https://github.com/Renevc14/AWS_Leetcode.git
+cd AWS_Leetcode
+npm install
+cd ..
 ```
 
-El pre-commit hook de husky se activa al `npm install` de la raíz.
+El pre-commit hook de husky se activa al `npm install` de la raíz del repo Leetcode.
 
 ## Validación local sin desplegar
 
 ```bash
-# Lint y tests de infra
-npm --prefix infra run lint
-npm --prefix infra run format:check
-npm --prefix infra test                          # 16/16 tests
+# Infra
+cd AWS_Leetcode
+npm run lint
+npm run format:check
+npm test                  # 16/16 tests
+npx cdk synth --all
+cd ..
 
-# Sintetizar templates CloudFormation sin desplegar
-npm --prefix infra exec cdk synth --all
-
-# Build y lint del frontend
+# Frontend
+cd Leetcode
 npm --prefix frontend run lint
 npm --prefix frontend run build
+cd ..
 ```
 
 ## Despliegue completo
 
+> Todos los comandos `cdk` corren desde dentro de `AWS_Leetcode/`.
+
 ### Paso 1 — Bootstrap del entorno (una sola vez por cuenta/región)
 
 ```bash
-npm --prefix infra exec cdk bootstrap
+cd AWS_Leetcode
+npx cdk bootstrap
 ```
 
 Crea un bucket S3 (`cdk-hnb659fds-assets-<account>-<region>`) y roles IAM. Costo casi cero. Idempotente.
@@ -66,7 +82,7 @@ Crea un bucket S3 (`cdk-hnb659fds-assets-<account>-<region>`) y roles IAM. Costo
 ### Paso 2 — Deploy de la infra base + Authentik
 
 ```bash
-npm --prefix infra exec cdk deploy NetworkStack SecretsStack AuthentikStack --require-approval never
+npx cdk deploy NetworkStack SecretsStack AuthentikStack --require-approval never
 ```
 
 Tarda ~3 minutos. Salida relevante:
@@ -135,7 +151,7 @@ sudo docker compose -f /opt/authentik/docker-compose.yml logs --tail=200 worker 
 ### Paso 5 — Deploy del ApiGatewayStack
 
 ```bash
-npm --prefix infra exec cdk deploy ApiGatewayStack --require-approval never
+npx cdk deploy ApiGatewayStack --require-approval never
 ```
 
 Tarda ~1 minuto. Salida:
@@ -155,6 +171,7 @@ curl -i https://xxxxxxxxxx.execute-api.us-east-1.amazonaws.com/v1/me
 ### Paso 6 — Configurar el frontend
 
 ```bash
+cd ../Leetcode
 cp frontend/.env.example frontend/.env
 ```
 
@@ -191,7 +208,8 @@ Abre http://localhost:5173.
 Cuando termines, para no acumular costos:
 
 ```bash
-npm --prefix infra exec cdk destroy --all --force
+cd AWS_Leetcode
+npx cdk destroy --all --force
 ```
 
 Tarda ~3 minutos. Lo que **no** se borra:
@@ -203,10 +221,10 @@ Tarda ~3 minutos. Lo que **no** se borra:
 
 El blueprint hace que el segundo deploy y siguientes sean prácticamente automáticos:
 
-1. `cdk deploy --all`
+1. `cd AWS_Leetcode && npx cdk deploy --all`
 2. Esperar ~3 min.
 3. Generar password de `akadmin` con SSM (paso 3 de arriba).
-4. Actualizar `frontend/.env` con la nueva EIP y nueva URL de API.
-5. `npm --prefix frontend run dev`.
+4. Actualizar `Leetcode/frontend/.env` con la nueva EIP y nueva URL de API.
+5. `cd Leetcode && npm --prefix frontend run dev`.
 
 No hay que volver a tocar la UI de Authentik para crear provider/app/grupos/users.

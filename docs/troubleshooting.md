@@ -44,20 +44,20 @@ would create a cyclic reference.
 
 **Causa**: `npm run build` ejecutó `tsc` que dejó archivos `.js` compilados en `lib/stacks/*.js`. ts-jest a veces prefiere esos `.js` sobre los `.ts` fuente.
 
-**Fix**:
+**Fix** (en el repo `AWS_Leetcode`):
 
 ```bash
-find infra/lib infra/bin -name "*.js" -delete
-find infra/lib infra/bin -name "*.d.ts" -delete
+find lib bin -name "*.js" -delete
+find lib bin -name "*.d.ts" -delete
 ```
 
-Estos archivos ya están en `infra/.gitignore`, así que nunca van a git. Pero hay que limpiarlos del filesystem local cuando aparecen.
+Estos archivos ya están en `.gitignore`, así que nunca van a git. Pero hay que limpiarlos del filesystem local cuando aparecen.
 
 ## Prettier reporta CRLF/LF inconsistencias en Windows
 
 **Síntoma**: `npm run format:check` falla con warnings sobre line endings en archivos que Prettier ya ha tocado.
 
-**Fix**: `endOfLine: "auto"` en `.prettierrc.json` (raíz e `infra/`/`frontend/`). Acepta el line ending del sistema sin forzar conversión.
+**Fix**: `endOfLine: "auto"` en `.prettierrc.json` (en cada repo). Acepta el line ending del sistema sin forzar conversión.
 
 ## Authentik 2024.x no pide setup inicial — pide login directo
 
@@ -97,7 +97,7 @@ CREATE_FAILED ... AWS::ApiGatewayV2::Authorizer:
 
 **Causa**: el `HttpJwtAuthorizer` nativo de API Gateway exige que el issuer sea **HTTPS**. Nuestro Authentik corre en HTTP por simplicidad.
 
-**Fix**: usar `HttpLambdaAuthorizer` con una Lambda que valida el JWT manualmente contra el JWKS. Ya está implementado en `infra/lib/stacks/api-gateway-stack.ts`. La Lambda:
+**Fix**: usar `HttpLambdaAuthorizer` con una Lambda que valida el JWT manualmente contra el JWKS. Ya está implementado en `AWS_Leetcode/lib/stacks/api-gateway-stack.ts`. La Lambda:
 
 - Decodifica header, payload, signature.
 - Valida `iss`, `aud`, `exp`.
