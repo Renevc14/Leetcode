@@ -1,138 +1,103 @@
 # Leetcode
 
-Sistema de autenticación y autorización para una plataforma tipo LeetCode. Usa OIDC con Authorization Code + PKCE para AuthN y RBAC con tres roles (USER, SETTER, ADMIN) para AuthZ.
+Sistema de autenticación y autorización para una plataforma tipo LeetCode. Usa OIDC con Authorization Code + PKCE para AuthN y RBAC con tres roles (`USER`, `SETTER`, `ADMIN`) para AuthZ. Desplegado en AWS.
+
+> Proyecto de la materia **Arquitectura y Microservicios** (Maestría FullStack, UCB).
+
+## Documentación
+
+- [**docs/architecture.md**](docs/architecture.md) — Componentes, flow OIDC con diagrama de secuencia, modelo RBAC, decisiones de diseño y trade-offs.
+- [**docs/setup.md**](docs/setup.md) — Paso a paso completo desde cero: prerequisitos, bootstrap, deploy, configuración del frontend, validación E2E.
+- [**docs/authentik-config.md**](docs/authentik-config.md) — Configuración manual de Authentik (fallback si el blueprint no aplica). Documenta provider, app, scopes, grupos, mapper, bindings y usuarios paso a paso.
+- [**docs/troubleshooting.md**](docs/troubleshooting.md) — Issues conocidos y cómo resolverlos (credenciales AWS en git-bash, 403 en login, JWT Authorizer issuer HTTPS, etc.).
 
 ## Estructura del monorepo
 
-- `infra/` — Infraestructura como código con AWS CDK en TypeScript.
+- `infra/` — Infraestructura como código con AWS CDK en TypeScript (4 stacks).
 - `frontend/` — SPA en React 19 + Vite + TypeScript con OIDC + PKCE y RBAC.
+- `docs/` — Documentación técnica.
 - `scripts/` — Utilidades operativas (pendiente).
-- `docs/` — Documentación técnica (pendiente).
 
 ## Stack
 
-- **AWS:** CDK, EC2 (Authentik), API Gateway HTTP API con JWT Authorizer, Secrets Manager.
-- **Frontend:** React 18 + TypeScript + Vite, `react-oidc-context`.
-- **Identity Provider:** Authentik (self-hosted en una EC2 con docker-compose; Postgres y Redis viven como contenedores dentro del mismo host).
-- **Tests E2E:** Playwright.
+- **AWS**: CDK, EC2 (Authentik en docker-compose), API Gateway HTTP API con Lambda Authorizer, Secrets Manager.
+- **Frontend**: React 19 + TypeScript + Vite, `react-oidc-context`.
+- **Identity Provider**: Authentik self-hosted (`ghcr.io/goauthentik/server:2024.10`) con Postgres y Redis dentro del mismo EC2.
 
-## Prerequisitos
-
-- Node.js 20+ y npm 10+.
-- AWS CLI configurada (`aws sts get-caller-identity` debe responder).
-- AWS CDK CLI: `npm install -g aws-cdk`.
-
-## Setup local
+## Quick start
 
 ```bash
-# Dependencias de la raíz (husky, lint-staged, prettier)
-npm install
+git clone https://github.com/Renevc14/Leetcode.git
+cd Leetcode
 
-# Dependencias de infraestructura y frontend
+npm install
 npm --prefix infra install
 npm --prefix frontend install
+
+npm --prefix infra exec cdk bootstrap          # una vez por cuenta/región
+npm --prefix infra exec cdk deploy --all       # desplegar (~5 min)
+# ... configurar frontend/.env con los outputs ...
+npm --prefix frontend run dev                   # http://localhost:5173
 ```
 
-El pre-commit hook de husky ejecuta `lint-staged` automáticamente y formatea con Prettier los archivos modificados (de raíz, `infra/` y `frontend/`).
+Cuando termines, **bajar la infra** para no acumular costos: `npm --prefix infra exec cdk destroy --all --force`.
 
-### Variables de entorno del frontend
+Detalle completo en [docs/setup.md](docs/setup.md).
 
-Copia `frontend/.env.example` a `frontend/.env` y completa los valores:
+## Stacks desplegados
 
-- `VITE_AUTH_AUTHORITY` — URL del issuer OIDC de Authentik (output `IssuerUrl` del `ApiGatewayStack`).
-- `VITE_AUTH_CLIENT_ID` — Client ID configurado en la aplicación OIDC (por defecto `leetcode`).
-- `VITE_AUTH_REDIRECT_URI` — Para dev: `http://localhost:5173/auth/callback`.
-- `VITE_API_BASE_URL` — Output `ApiUrl` del `ApiGatewayStack`.
+| Stack               | Qué hace                                                                                                                                                         |
+| ------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **NetworkStack**    | VPC con 1 AZ y 1 subnet pública. Sin NAT Gateway.                                                                                                                |
+| **SecretsStack**    | `AUTHENTIK_SECRET_KEY` y client secret OIDC en Secrets Manager.                                                                                                  |
+| **AuthentikStack**  | EC2 `t4g.small` con docker-compose corriendo Authentik server + worker + Postgres + Redis. UserData baja el `docker-compose.yml` y el blueprint como CDK Assets. |
+| **ApiGatewayStack** | HTTP API con Lambda Authorizer que valida JWT contra el JWKS de Authentik. Endpoint mock `GET /v1/me`.                                                           |
+
+## Costo aproximado en us-east-1
+
+| Recurso                     | Mensual         |
+| --------------------------- | --------------- |
+| EC2 t4g.small               | ~$15            |
+| EBS gp3 20 GB               | ~$1.6           |
+| Secrets Manager (2 secrets) | ~$0.80          |
+| HTTP API + Lambda           | ~$0 (free tier) |
+| **Total corriendo 24/7**    | **~$17.40**     |
+
+Detalle en [docs/architecture.md](docs/architecture.md#costo-total-esperado).
+
+## Validación local
 
 ```bash
-npm --prefix frontend run dev   # http://localhost:5173
+npm --prefix infra run lint
+npm --prefix infra run format:check
+npm --prefix infra test                  # 16/16 tests
+npm --prefix infra exec cdk synth --all
+
+npm --prefix frontend run lint
+npm --prefix frontend run build
 ```
 
-## Comandos de infraestructura
+## Variables de entorno del frontend
 
-Desde `infra/`:
+`frontend/.env.example` lista todas las variables esperadas. Para dev:
 
-| Comando                | Uso                                  |
-| ---------------------- | ------------------------------------ |
-| `npm run build`        | Compila TypeScript a JavaScript      |
-| `npm run lint`         | Ejecuta ESLint sobre todo el código  |
-| `npm run format`       | Aplica Prettier a todos los archivos |
-| `npm test`             | Tests de assertions de los stacks    |
-| `npx cdk synth`        | Sintetiza CloudFormation             |
-| `npx cdk diff`         | Compara con el stack desplegado      |
-| `npx cdk deploy --all` | Despliega todos los stacks           |
-
-## Primer despliegue
-
-1. Define la región AWS (sugerida `us-east-1`).
-2. Bootstrap del entorno (una sola vez por cuenta/región):
-
-   ```bash
-   npm --prefix infra exec cdk bootstrap
-   ```
-
-3. Verifica que sintetiza:
-
-   ```bash
-   npm --prefix infra exec cdk synth --all
-   ```
-
-4. Despliega:
-
-   ```bash
-   npm --prefix infra exec cdk deploy --all
-   ```
-
-## Stacks actuales
-
-- **NetworkStack** — VPC con una subnet pública en 1 AZ. Sin NAT Gateway (la EC2 sale a Internet directo).
-- **SecretsStack** — `AUTHENTIK_SECRET_KEY` y client secret OIDC en Secrets Manager.
-- **AuthentikStack** — EC2 `t4g.small` con Elastic IP y volumen EBS encriptado. Un UserData instala Docker, baja el `docker-compose.yml` desde S3 (asset CDK) y levanta Authentik server + worker + Postgres + Redis.
-- **ApiGatewayStack** — HTTP API con JWT Authorizer apuntando al issuer OIDC de Authentik (`http://<EIP>:9000/application/o/leetcode/`). Expone `GET /v1/me` con una Lambda mock que devuelve los claims `sub`, `email`, `name` y `roles` del token.
-
-## Costos aproximados (dev)
-
-- EC2 t4g.small: ~$15/mes.
-- EBS gp3 20 GB: ~$1.6/mes.
-- Elastic IP (mientras esté asociada): $0.
-- Secrets Manager (2 secretos): ~$0.80/mes.
-- HTTP API + Lambda: ~$0 (free tier cubre desarrollo).
-
-Total: ~$17–20/mes. Ejecutar `cdk destroy --all` al terminar la sesión para no acumular costos.
-
-## Orden de despliegue
-
-El `AuthentikStack` despliega Authentik y aplica un **blueprint** (`infra/assets/authentik/blueprints/leetcode.yaml`) que crea automáticamente:
-
-- 3 grupos: `USER`, `SETTER`, `ADMIN`.
-- Property mapping `Roles Mapping` (scope `roles`).
-- Provider OIDC `leetcode-provider` (PKCE, redirect a `http://localhost:5173/auth/callback`).
-- Application `LeetCode` (slug `leetcode`) con bindings a los 3 grupos.
-- 3 usuarios de prueba (`test-user`, `test-setter`, `test-admin`) con password `Test123!` y grupos en cascada.
-
-Por eso el orden es:
-
-1. `cdk deploy NetworkStack SecretsStack AuthentikStack` — levanta Authentik + aplica el blueprint.
-2. Esperar ~3 minutos a que arranquen los contenedores y el worker procese el blueprint.
-3. (Solo la primera vez) Generar el password de `akadmin` desde la EC2 vía SSM:
-
-   ```bash
-   aws ssm send-command --instance-ids <id> --document-name AWS-RunShellScript \
-     --parameters 'commands=["cd /opt/authentik && docker compose exec -T worker ak create_recovery_key 24 akadmin"]'
-   ```
-
-   El output trae una URL de recovery — abrila en el browser para setear el password.
-
-4. `cdk deploy ApiGatewayStack` — hace OIDC discovery contra el provider que el blueprint ya creó.
-
-> Las claves seteadas en el blueprint (`Test123!`) son **demo only**. Para producción, generar passwords via env vars del container o flow de password reset.
-
-## Acceder a Authentik
-
-Después del primer `cdk deploy`, el output `AuthentikStack.AuthentikUrl` muestra la URL pública (http://<EIP>:9000). La inicialización del contenedor toma ~3 minutos. Para diagnosticar:
-
-```bash
-aws ssm start-session --target <instance-id>
-cd /opt/authentik
-docker compose logs --tail=100 -f server
 ```
+VITE_AUTH_AUTHORITY=http://<EIP>:9000/application/o/leetcode/
+VITE_AUTH_CLIENT_ID=leetcode
+VITE_AUTH_REDIRECT_URI=http://localhost:5173/auth/callback
+VITE_API_BASE_URL=https://<api-id>.execute-api.us-east-1.amazonaws.com
+```
+
+`<EIP>` viene del output `AuthentikStack.PublicIp`; `<api-id>` del output `ApiGatewayStack.ApiUrl`.
+
+## Usuarios de prueba
+
+El blueprint de Authentik crea estos usuarios automáticamente al primer deploy:
+
+| Usuario       | Password   | Grupos                    |
+| ------------- | ---------- | ------------------------- |
+| `test-user`   | `Test123!` | `USER`                    |
+| `test-setter` | `Test123!` | `USER`, `SETTER`          |
+| `test-admin`  | `Test123!` | `USER`, `SETTER`, `ADMIN` |
+
+Demo-only. En producción reemplazar.
