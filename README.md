@@ -16,6 +16,7 @@ Se separan para que la infra pueda evolucionar independientemente, pero los docs
 ## Documentación
 
 - [**docs/architecture.md**](docs/architecture.md) — Componentes, flow OIDC con diagrama de secuencia, modelo RBAC, decisiones de diseño y trade-offs.
+- [**docs/data-model.md**](docs/data-model.md) — Modelo de datos por servicio: tipos de DB, esquemas, eventos y patrones (Database per Service, Saga choreography, DLQ).
 - [**docs/setup.md**](docs/setup.md) — Paso a paso completo desde cero: prerequisitos, bootstrap, deploy, configuración del frontend, validación E2E.
 - [**docs/authentik-config.md**](docs/authentik-config.md) — Configuración manual de Authentik (fallback si el blueprint no aplica).
 - [**docs/troubleshooting.md**](docs/troubleshooting.md) — Issues conocidos y cómo resolverlos.
