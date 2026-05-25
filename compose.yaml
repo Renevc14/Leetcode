@@ -1,0 +1,50 @@
+services:
+  problems-postgres:
+    image: postgres:17-alpine
+    container_name: problems-postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: ${PROBLEMS_POSTGRES_DB:-problems}
+      POSTGRES_USER: ${PROBLEMS_POSTGRES_USER:-problems}
+      POSTGRES_PASSWORD: ${PROBLEMS_POSTGRES_PASSWORD:-problems}
+    ports:
+      - '5433:5432'
+    volumes:
+      - leetcode_problems_data:/var/lib/postgresql/data
+      - ./databases/init-problem-service.sql:/docker-entrypoint-initdb.d/01-init-problem-service.sql:ro
+    healthcheck:
+      test:
+        [
+          'CMD-SHELL',
+          'pg_isready -U ${PROBLEMS_POSTGRES_USER:-problems} -d ${PROBLEMS_POSTGRES_DB:-problems}',
+        ]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  submissions-postgres:
+    image: postgres:17-alpine
+    container_name: submissions-postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: ${SUBMISSIONS_POSTGRES_DB:-submissions}
+      POSTGRES_USER: ${SUBMISSIONS_POSTGRES_USER:-submissions}
+      POSTGRES_PASSWORD: ${SUBMISSIONS_POSTGRES_PASSWORD:-submissions}
+    ports:
+      - '5434:5432'
+    volumes:
+      - leetcode_submissions_data:/var/lib/postgresql/data
+      - ./databases/init-submission-service.sql:/docker-entrypoint-initdb.d/01-init-submission-service.sql:ro
+    healthcheck:
+      test:
+        [
+          'CMD-SHELL',
+          'pg_isready -U ${SUBMISSIONS_POSTGRES_USER:-submissions} -d ${SUBMISSIONS_POSTGRES_DB:-submissions}',
+        ]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+volumes:
+  leetcode_problems_data:
+  leetcode_submissions_data:
