@@ -42,6 +42,9 @@ Thumbs.db
 *.swp
 *.swo
 
+# Documentación interna del equipo (no va al repo)
+docs/
+
 # AWS CDK
 .cdk.staging/
 cdk.out/

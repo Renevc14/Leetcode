@@ -45,6 +45,67 @@ services:
       timeout: 5s
       retries: 5
 
+  users-postgres:
+    image: postgres:17-alpine
+    container_name: users-postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: ${USERS_POSTGRES_DB:-users}
+      POSTGRES_USER: ${USERS_POSTGRES_USER:-users}
+      POSTGRES_PASSWORD: ${USERS_POSTGRES_PASSWORD:-users}
+    ports:
+      - '5435:5432'
+    volumes:
+      - leetcode_users_data:/var/lib/postgresql/data
+      - ./databases/init-users-service.sql:/docker-entrypoint-initdb.d/01-init-users-service.sql:ro
+    healthcheck:
+      test:
+        ['CMD-SHELL', 'pg_isready -U ${USERS_POSTGRES_USER:-users} -d ${USERS_POSTGRES_DB:-users}']
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  contests-postgres:
+    image: postgres:17-alpine
+    container_name: contests-postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: ${CONTESTS_POSTGRES_DB:-contests}
+      POSTGRES_USER: ${CONTESTS_POSTGRES_USER:-contests}
+      POSTGRES_PASSWORD: ${CONTESTS_POSTGRES_PASSWORD:-contests}
+    ports:
+      - '5436:5432'
+    volumes:
+      - leetcode_contests_data:/var/lib/postgresql/data
+      - ./databases/init-contests-service.sql:/docker-entrypoint-initdb.d/01-init-contests-service.sql:ro
+    healthcheck:
+      test:
+        [
+          'CMD-SHELL',
+          'pg_isready -U ${CONTESTS_POSTGRES_USER:-contests} -d ${CONTESTS_POSTGRES_DB:-contests}',
+        ]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  redis:
+    image: redis:7-alpine
+    container_name: leetcode-redis
+    restart: unless-stopped
+    command: ['redis-server', '--save', '60', '1', '--loglevel', 'warning']
+    ports:
+      - '6379:6379'
+    volumes:
+      - leetcode_redis_data:/data
+    healthcheck:
+      test: ['CMD', 'redis-cli', 'ping']
+      interval: 10s
+      timeout: 3s
+      retries: 5
+
 volumes:
   leetcode_problems_data:
   leetcode_submissions_data:
+  leetcode_users_data:
+  leetcode_contests_data:
+  leetcode_redis_data:
