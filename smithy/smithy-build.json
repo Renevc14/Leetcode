@@ -1,0 +1,212 @@
+{
+  "$schema": "https://smithy.io/2.0/_static/smithy-build-schema.json",
+  "version": "1.0",
+  "sources": ["models"],
+  "outputDirectory": "../packages",
+  "maven": {
+    "dependencies": [
+      "software.amazon.smithy:smithy-aws-traits:1.71.0",
+      "software.amazon.smithy:smithy-validation-model:1.71.0",
+      "software.amazon.smithy:smithy-openapi:1.71.0",
+      "software.amazon.smithy.typescript:smithy-aws-typescript-codegen:0.50.0"
+    ]
+  },
+  "projections": {
+    "problems-service-openapi": {
+      "plugins": {
+        "openapi": {
+          "service": "com.leetcode.problems#ProblemsService",
+          "protocol": "aws.protocols#restJson1",
+          "version": "3.1.0"
+        }
+      }
+    },
+    "contests-service-openapi": {
+      "plugins": {
+        "openapi": {
+          "service": "com.leetcode.contests#ContestsService",
+          "protocol": "aws.protocols#restJson1",
+          "version": "3.1.0"
+        }
+      }
+    },
+    "submissions-service-openapi": {
+      "plugins": {
+        "openapi": {
+          "service": "com.leetcode.submissions#SubmissionsService",
+          "protocol": "aws.protocols#restJson1",
+          "version": "3.1.0"
+        }
+      }
+    },
+    "users-service-openapi": {
+      "plugins": {
+        "openapi": {
+          "service": "com.leetcode.users#UsersService",
+          "protocol": "aws.protocols#restJson1",
+          "version": "3.1.0"
+        }
+      }
+    },
+    "problems-api-server-sdk": {
+      "transforms": [
+        {
+          "name": "includeServices",
+          "args": {
+            "services": ["com.leetcode.problems#ProblemsService"]
+          }
+        }
+      ],
+      "plugins": {
+        "typescript-server-codegen": {
+          "package": "@com.leetcode/problems-api-server",
+          "packageVersion": "0.0.1",
+          "packageManager": "pnpm",
+          "packageJson": {
+            "private": true
+          }
+        }
+      }
+    },
+    "problems-api-client-sdk": {
+      "transforms": [
+        {
+          "name": "includeServices",
+          "args": {
+            "services": ["com.leetcode.problems#ProblemsService"]
+          }
+        }
+      ],
+      "plugins": {
+        "typescript-client-codegen": {
+          "package": "@com.leetcode/problems-api-client",
+          "packageVersion": "0.0.1",
+          "packageManager": "pnpm",
+          "packageJson": {
+            "private": true
+          }
+        }
+      }
+    },
+    "contests-api-server-sdk": {
+      "transforms": [
+        {
+          "name": "includeServices",
+          "args": {
+            "services": ["com.leetcode.contests#ContestsService"]
+          }
+        }
+      ],
+      "plugins": {
+        "typescript-server-codegen": {
+          "package": "@com.leetcode/contests-api-server",
+          "packageVersion": "0.0.1",
+          "packageManager": "pnpm",
+          "packageJson": {
+            "private": true
+          }
+        }
+      }
+    },
+    "contests-api-client-sdk": {
+      "transforms": [
+        {
+          "name": "includeServices",
+          "args": {
+            "services": ["com.leetcode.contests#ContestsService"]
+          }
+        }
+      ],
+      "plugins": {
+        "typescript-client-codegen": {
+          "package": "@com.leetcode/contests-api-client",
+          "packageVersion": "0.0.1",
+          "packageManager": "pnpm",
+          "packageJson": {
+            "private": true
+          }
+        }
+      }
+    },
+    "submissions-api-server-sdk": {
+      "transforms": [
+        {
+          "name": "includeServices",
+          "args": {
+            "services": ["com.leetcode.submissions#SubmissionsService"]
+          }
+        }
+      ],
+      "plugins": {
+        "typescript-server-codegen": {
+          "package": "@com.leetcode/submissions-api-server",
+          "packageVersion": "0.0.1",
+          "packageManager": "pnpm",
+          "packageJson": {
+            "private": true
+          }
+        }
+      }
+    },
+    "submissions-api-client-sdk": {
+      "transforms": [
+        {
+          "name": "includeServices",
+          "args": {
+            "services": ["com.leetcode.submissions#SubmissionsService"]
+          }
+        }
+      ],
+      "plugins": {
+        "typescript-client-codegen": {
+          "package": "@com.leetcode/submissions-api-client",
+          "packageVersion": "0.0.1",
+          "packageManager": "pnpm",
+          "packageJson": {
+            "private": true
+          }
+        }
+      }
+    },
+    "users-api-server-sdk": {
+      "transforms": [
+        {
+          "name": "includeServices",
+          "args": {
+            "services": ["com.leetcode.users#UsersService"]
+          }
+        }
+      ],
+      "plugins": {
+        "typescript-server-codegen": {
+          "package": "@com.leetcode/users-api-server",
+          "packageVersion": "0.0.1",
+          "packageManager": "pnpm",
+          "packageJson": {
+            "private": true
+          }
+        }
+      }
+    },
+    "users-api-client-sdk": {
+      "transforms": [
+        {
+          "name": "includeServices",
+          "args": {
+            "services": ["com.leetcode.users#UsersService"]
+          }
+        }
+      ],
+      "plugins": {
+        "typescript-client-codegen": {
+          "package": "@com.leetcode/users-api-client",
+          "packageVersion": "0.0.1",
+          "packageManager": "pnpm",
+          "packageJson": {
+            "private": true
+          }
+        }
+      }
+    }
+  }
+}
