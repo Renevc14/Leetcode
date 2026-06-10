@@ -9,11 +9,11 @@ import {
   GetUserStatsServerOutput,
   UnauthorizedError,
   UserNotFoundError,
-} from "@com.leetcode/users-server";
+} from '@com.leetcode/users-api-server';
 
 // ─── Tipos internos ────────────────────────────────────────────────────────────
 
-type UserRole = "USER" | "SETTER" | "ADMIN";
+type UserRole = 'USER' | 'SETTER' | 'ADMIN';
 
 interface UserRecord {
   id: string;
@@ -47,11 +47,11 @@ export function createInitialContext(): UsersContext {
 
   const seed: UserRecord[] = [
     {
-      id: "user-001",
-      username: "alice_dev",
-      email: "alice@example.com",
-      role: "USER",
-      createdAt: "2024-01-15T08:00:00Z",
+      id: 'user-001',
+      username: 'alice_dev',
+      email: 'alice@example.com',
+      role: 'USER',
+      createdAt: '2024-01-15T08:00:00Z',
       stats: {
         solvedEasy: 45,
         solvedMedium: 23,
@@ -62,11 +62,11 @@ export function createInitialContext(): UsersContext {
       },
     },
     {
-      id: "user-002",
-      username: "bob_setter",
-      email: "bob@example.com",
-      role: "SETTER",
-      createdAt: "2024-01-10T08:00:00Z",
+      id: 'user-002',
+      username: 'bob_setter',
+      email: 'bob@example.com',
+      role: 'SETTER',
+      createdAt: '2024-01-10T08:00:00Z',
       stats: {
         solvedEasy: 120,
         solvedMedium: 87,
@@ -77,11 +77,11 @@ export function createInitialContext(): UsersContext {
       },
     },
     {
-      id: "user-003",
-      username: "carol_admin",
-      email: "carol@example.com",
-      role: "ADMIN",
-      createdAt: "2024-01-01T08:00:00Z",
+      id: 'user-003',
+      username: 'carol_admin',
+      email: 'carol@example.com',
+      role: 'ADMIN',
+      createdAt: '2024-01-01T08:00:00Z',
       stats: {
         solvedEasy: 200,
         solvedMedium: 150,
@@ -97,28 +97,24 @@ export function createInitialContext(): UsersContext {
     users.set(u.id, u);
   }
 
-  return { users, currentUserId: "user-001" };
+  return { users, currentUserId: 'user-001' };
 }
 
 // ─── Implementación del servicio ───────────────────────────────────────────────
 
 export class UsersServiceImpl implements UsersServiceService<UsersContext> {
-
-  async GetMe(
-    _input: GetMeServerInput,
-    ctx: UsersContext
-  ): Promise<GetMeServerOutput> {
+  async GetMe(_input: GetMeServerInput, ctx: UsersContext): Promise<GetMeServerOutput> {
     // En producción: extraer userId del claim 'sub' del JWT validado por API Gateway
     if (!ctx.currentUserId) {
       throw new UnauthorizedError({
-        message: "Authentication required. Please provide a valid Bearer token.",
+        message: 'Authentication required. Please provide a valid Bearer token.',
       });
     }
 
     const user = ctx.users.get(ctx.currentUserId);
     if (!user) {
       throw new UnauthorizedError({
-        message: "Token is valid but user no longer exists.",
+        message: 'Token is valid but user no longer exists.',
       });
     }
 
@@ -131,10 +127,7 @@ export class UsersServiceImpl implements UsersServiceService<UsersContext> {
     };
   }
 
-  async GetUser(
-    input: GetUserServerInput,
-    ctx: UsersContext
-  ): Promise<GetUserServerOutput> {
+  async GetUser(input: GetUserServerInput, ctx: UsersContext): Promise<GetUserServerOutput> {
     const user = ctx.users.get(input.userId);
 
     if (!user) {
@@ -153,7 +146,7 @@ export class UsersServiceImpl implements UsersServiceService<UsersContext> {
 
   async GetUserStats(
     input: GetUserStatsServerInput,
-    ctx: UsersContext
+    ctx: UsersContext,
   ): Promise<GetUserStatsServerOutput> {
     const user = ctx.users.get(input.userId);
 
