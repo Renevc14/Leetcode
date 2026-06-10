@@ -13,7 +13,7 @@ import {
   Language,
   SubmissionStatus,
   Verdict,
-} from "@com.leetcode/submissions-server";
+} from '@com.leetcode/submissions-api-server';
 
 interface SubmissionRecord {
   id: string;
@@ -36,64 +36,66 @@ const db = new Map<string, SubmissionRecord>();
 function seed() {
   const records: SubmissionRecord[] = [
     {
-      id: "sub-001",
-      problemId: "prob-001",
-      userId: "user-001",
+      id: 'sub-001',
+      problemId: 'prob-001',
+      userId: 'user-001',
       language: Language.PYTHON,
       status: SubmissionStatus.DONE,
       verdict: Verdict.AC,
       runtimeMs: 42,
       memoryKb: 14200,
-      sourceCode: "def twoSum(nums, target):\n    seen = {}\n    for i, n in enumerate(nums):\n        if target - n in seen:\n            return [seen[target - n], i]\n        seen[n] = i",
+      sourceCode:
+        'def twoSum(nums, target):\n    seen = {}\n    for i, n in enumerate(nums):\n        if target - n in seen:\n            return [seen[target - n], i]\n        seen[n] = i',
       isRun: false,
-      createdAt: "2024-03-01T10:00:00Z",
+      createdAt: '2024-03-01T10:00:00Z',
     },
     {
-      id: "sub-002",
-      problemId: "prob-001",
-      userId: "user-002",
+      id: 'sub-002',
+      problemId: 'prob-001',
+      userId: 'user-002',
       language: Language.JAVA,
       status: SubmissionStatus.DONE,
       verdict: Verdict.WA,
       runtimeMs: 88,
       memoryKb: 41000,
       failedTestCaseIndex: 3,
-      sourceCode: "class Solution { public int[] twoSum(int[] nums, int target) { return new int[]{}; } }",
+      sourceCode:
+        'class Solution { public int[] twoSum(int[] nums, int target) { return new int[]{}; } }',
       isRun: false,
-      createdAt: "2024-03-02T14:30:00Z",
+      createdAt: '2024-03-02T14:30:00Z',
     },
     {
-      id: "sub-003",
-      problemId: "prob-002",
-      userId: "user-001",
+      id: 'sub-003',
+      problemId: 'prob-002',
+      userId: 'user-001',
       language: Language.CPP,
       status: SubmissionStatus.DONE,
       verdict: Verdict.TLE,
       runtimeMs: 5000,
       memoryKb: 8192,
-      sourceCode: "class Solution { public: bool isPalindrome(string s) { return false; } };",
+      sourceCode: 'class Solution { public: bool isPalindrome(string s) { return false; } };',
       isRun: false,
-      createdAt: "2024-03-03T09:15:00Z",
+      createdAt: '2024-03-03T09:15:00Z',
     },
     {
-      id: "sub-004",
-      problemId: "prob-003",
-      userId: "user-003",
+      id: 'sub-004',
+      problemId: 'prob-003',
+      userId: 'user-003',
       language: Language.JAVASCRIPT,
       status: SubmissionStatus.RUNNING,
-      sourceCode: "var maxProfit = function(prices) { return 0; };",
+      sourceCode: 'var maxProfit = function(prices) { return 0; };',
       isRun: false,
-      createdAt: "2024-03-04T11:00:00Z",
+      createdAt: '2024-03-04T11:00:00Z',
     },
     {
-      id: "sub-005",
-      problemId: "prob-002",
-      userId: "user-002",
+      id: 'sub-005',
+      problemId: 'prob-002',
+      userId: 'user-002',
       language: Language.TYPESCRIPT,
       status: SubmissionStatus.QUEUED,
-      sourceCode: "function isPalindrome(s: string): boolean { return false; }",
+      sourceCode: 'function isPalindrome(s: string): boolean { return false; }',
       isRun: false,
-      createdAt: "2024-03-05T16:45:00Z",
+      createdAt: '2024-03-05T16:45:00Z',
     },
   ];
   for (const r of records) db.set(r.id, r);
@@ -103,7 +105,7 @@ seed();
 
 let idCounter = 6;
 function newId(): string {
-  return `sub-${String(idCounter++).padStart(3, "0")}`;
+  return `sub-${String(idCounter++).padStart(3, '0')}`;
 }
 
 function simulateResult(id: string) {
@@ -118,11 +120,11 @@ function simulateResult(id: string) {
 }
 
 function notFound(message: string): never {
-  throw { $fault: "client", $metadata: {}, message } as any;
+  throw { $fault: 'client', $metadata: {}, message } as any;
 }
 
 function unauthorized(): never {
-  throw { $fault: "client", $metadata: {}, message: "Unauthorized" } as any;
+  throw { $fault: 'client', $metadata: {}, message: 'Unauthorized' } as any;
 }
 
 export const submissionsServiceImpl: SubmissionsServiceService<{}> = {
@@ -131,7 +133,7 @@ export const submissionsServiceImpl: SubmissionsServiceService<{}> = {
     db.set(id, {
       id,
       problemId: input.problemId,
-      userId: "user-anon",
+      userId: 'user-anon',
       language: input.language,
       status: SubmissionStatus.QUEUED,
       sourceCode: input.sourceCode,
@@ -147,7 +149,7 @@ export const submissionsServiceImpl: SubmissionsServiceService<{}> = {
     db.set(id, {
       id,
       problemId: input.problemId,
-      userId: "user-001",
+      userId: 'user-001',
       language: input.language,
       status: SubmissionStatus.QUEUED,
       sourceCode: input.sourceCode,
@@ -204,7 +206,9 @@ export const submissionsServiceImpl: SubmissionsServiceService<{}> = {
     };
   },
 
-  async GetSubmissionCode(input: GetSubmissionCodeServerInput): Promise<GetSubmissionCodeServerOutput> {
+  async GetSubmissionCode(
+    input: GetSubmissionCodeServerInput,
+  ): Promise<GetSubmissionCodeServerOutput> {
     const rec = db.get(input.submissionId);
     if (!rec) notFound(`Submission '${input.submissionId}' not found`);
     return { sourceCode: rec.sourceCode, language: rec.language };
