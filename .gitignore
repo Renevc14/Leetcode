@@ -60,3 +60,6 @@ coverage/
 playwright-report/
 test-results/
 playwright/.cache/
+
+# Smithy generated code
+packages/*

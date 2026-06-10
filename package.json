@@ -3,20 +3,12 @@
   "version": "0.1.0",
   "private": true,
   "description": "Sistema de autenticación y autorización para una plataforma tipo LeetCode (OIDC + RBAC).",
+  "packageManager": "pnpm@11.3.0",
   "scripts": {
     "prepare": "husky",
-    "lint:infra": "npm --prefix infra run lint",
-    "format:infra": "npm --prefix infra run format:check",
-    "lint:frontend": "npm --prefix frontend run lint",
-    "format:frontend": "npm --prefix frontend run format:check"
+    "build": "pnpm -r run build"
   },
   "lint-staged": {
-    "infra/**/*.{ts,mjs,cjs,js}": [
-      "prettier --write --config infra/.prettierrc.json"
-    ],
-    "infra/**/*.{json,md,yml,yaml}": [
-      "prettier --write --config infra/.prettierrc.json"
-    ],
     "frontend/**/*.{ts,tsx,js,jsx,mjs,cjs}": [
       "prettier --write --config frontend/.prettierrc.json"
     ],
