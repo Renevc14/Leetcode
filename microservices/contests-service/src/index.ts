@@ -1,13 +1,13 @@
-import { IncomingMessage, ServerResponse, createServer } from "http";
-import { convertRequest, writeResponse } from "@aws-smithy/server-node";
-import { getContestsServiceServiceHandler } from "@com.leetcode/contests-server";
-import { contestsServiceImpl } from "./ContestsServiceImpl";
+import { IncomingMessage, ServerResponse, createServer } from 'http';
+import { convertRequest, writeResponse } from '@aws-smithy/server-node';
+import { getContestsServiceServiceHandler } from '@com.leetcode/contests-api-server';
+import { contestsServiceImpl } from './ContestsServiceImpl';
 
 const serviceHandler = getContestsServiceServiceHandler(contestsServiceImpl);
 
 const server = createServer(async function (
   req: IncomingMessage,
-  res: ServerResponse<IncomingMessage> & { req: IncomingMessage }
+  res: ServerResponse<IncomingMessage> & { req: IncomingMessage },
 ) {
   const httpRequest = convertRequest(req);
   const httpResponse = await serviceHandler.handle(httpRequest, {});

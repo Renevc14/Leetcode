@@ -16,7 +16,7 @@ import {
   ContestsServiceService,
   ContestStatus,
   Difficulty,
-} from "@com.leetcode/contests-server";
+} from '@com.leetcode/contests-api-server';
 
 interface ContestRecord {
   id: string;
@@ -40,11 +40,14 @@ interface ContestProblemRecord {
 const db = new Map<string, ContestRecord>();
 
 const problemTitles: Record<string, { title: string; difficulty: Difficulty }> = {
-  "prob-001": { title: "Two Sum", difficulty: Difficulty.EASY },
-  "prob-002": { title: "Valid Palindrome", difficulty: Difficulty.EASY },
-  "prob-003": { title: "Best Time to Buy and Sell Stock", difficulty: Difficulty.MEDIUM },
-  "prob-004": { title: "Longest Substring Without Repeating Characters", difficulty: Difficulty.MEDIUM },
-  "prob-005": { title: "Median of Two Sorted Arrays", difficulty: Difficulty.HARD },
+  'prob-001': { title: 'Two Sum', difficulty: Difficulty.EASY },
+  'prob-002': { title: 'Valid Palindrome', difficulty: Difficulty.EASY },
+  'prob-003': { title: 'Best Time to Buy and Sell Stock', difficulty: Difficulty.MEDIUM },
+  'prob-004': {
+    title: 'Longest Substring Without Repeating Characters',
+    difficulty: Difficulty.MEDIUM,
+  },
+  'prob-005': { title: 'Median of Two Sorted Arrays', difficulty: Difficulty.HARD },
 };
 
 function seed() {
@@ -54,36 +57,36 @@ function seed() {
 
   const contests: ContestRecord[] = [
     {
-      id: "contest-001",
-      title: "Weekly Contest 380",
-      description: "Standard weekly rated contest with 4 problems.",
+      id: 'contest-001',
+      title: 'Weekly Contest 380',
+      description: 'Standard weekly rated contest with 4 problems.',
       status: ContestStatus.FINISHED,
       startTime: past(48),
       endTime: past(46),
       participantCount: 12483,
-      problemIds: ["prob-001", "prob-002", "prob-003", "prob-005"],
-      enrolledUserIds: new Set(["user-001", "user-002", "user-003"]),
+      problemIds: ['prob-001', 'prob-002', 'prob-003', 'prob-005'],
+      enrolledUserIds: new Set(['user-001', 'user-002', 'user-003']),
     },
     {
-      id: "contest-002",
-      title: "Biweekly Contest 120",
-      description: "Biweekly contest — easier warmup problems.",
+      id: 'contest-002',
+      title: 'Biweekly Contest 120',
+      description: 'Biweekly contest — easier warmup problems.',
       status: ContestStatus.LIVE,
       startTime: past(1),
       endTime: future(1),
       participantCount: 3421,
-      problemIds: ["prob-001", "prob-002", "prob-003"],
-      enrolledUserIds: new Set(["user-001", "user-003"]),
+      problemIds: ['prob-001', 'prob-002', 'prob-003'],
+      enrolledUserIds: new Set(['user-001', 'user-003']),
     },
     {
-      id: "contest-003",
-      title: "Weekly Contest 381",
-      description: "Upcoming weekly rated contest.",
+      id: 'contest-003',
+      title: 'Weekly Contest 381',
+      description: 'Upcoming weekly rated contest.',
       status: ContestStatus.UPCOMING,
       startTime: future(24),
       endTime: future(26),
       participantCount: 0,
-      problemIds: ["prob-003", "prob-004", "prob-005"],
+      problemIds: ['prob-003', 'prob-004', 'prob-005'],
       enrolledUserIds: new Set(),
     },
   ];
@@ -95,18 +98,18 @@ seed();
 
 let idCounter = 4;
 function newId(): string {
-  return `contest-${String(idCounter++).padStart(3, "0")}`;
+  return `contest-${String(idCounter++).padStart(3, '0')}`;
 }
 
 function notFound(message: string): never {
-  throw { $fault: "client", $metadata: {}, message } as any;
+  throw { $fault: 'client', $metadata: {}, message } as any;
 }
 
 function conflict(message: string): never {
-  throw { $fault: "client", $metadata: {}, message } as any;
+  throw { $fault: 'client', $metadata: {}, message } as any;
 }
 
-const CURRENT_USER_ID = "user-001";
+const CURRENT_USER_ID = 'user-001';
 
 export const contestsServiceImpl: ContestsServiceService<{}> = {
   async ListContests(input: ListContestsServerInput): Promise<ListContestsServerOutput> {
@@ -150,8 +153,7 @@ export const contestsServiceImpl: ContestsServiceService<{}> = {
   async CreateContest(input: CreateContestServerInput): Promise<CreateContestServerOutput> {
     const now = new Date().toISOString();
     const startTime = input.startTime;
-    const status =
-      now < startTime ? ContestStatus.UPCOMING : ContestStatus.LIVE;
+    const status = now < startTime ? ContestStatus.UPCOMING : ContestStatus.LIVE;
 
     const id = newId();
     db.set(id, {
@@ -173,25 +175,27 @@ export const contestsServiceImpl: ContestsServiceService<{}> = {
     const c = db.get(input.contestId);
     if (!c) notFound(`Contest '${input.contestId}' not found`);
     if (c.enrolledUserIds.has(CURRENT_USER_ID)) {
-      conflict("Already enrolled in this contest");
+      conflict('Already enrolled in this contest');
     }
     c.enrolledUserIds.add(CURRENT_USER_ID);
     c.participantCount += 1;
-    return { message: "Successfully enrolled in contest" };
+    return { message: 'Successfully enrolled in contest' };
   },
 
   async UnenrollContest(input: UnenrollContestServerInput): Promise<UnenrollContestServerOutput> {
     const c = db.get(input.contestId);
     if (!c) notFound(`Contest '${input.contestId}' not found`);
     if (!c.enrolledUserIds.has(CURRENT_USER_ID)) {
-      conflict("Not enrolled in this contest");
+      conflict('Not enrolled in this contest');
     }
     c.enrolledUserIds.delete(CURRENT_USER_ID);
     c.participantCount = Math.max(0, c.participantCount - 1);
-    return { message: "Successfully unenrolled from contest" };
+    return { message: 'Successfully unenrolled from contest' };
   },
 
-  async GetContestProblems(input: GetContestProblemsServerInput): Promise<GetContestProblemsServerOutput> {
+  async GetContestProblems(
+    input: GetContestProblemsServerInput,
+  ): Promise<GetContestProblemsServerOutput> {
     const c = db.get(input.contestId);
     if (!c) notFound(`Contest '${input.contestId}' not found`);
 
@@ -208,9 +212,9 @@ export const contestsServiceImpl: ContestsServiceService<{}> = {
     if (!c) notFound(`Contest '${input.contestId}' not found`);
 
     const entries = [
-      { rank: 1, userId: "user-001", username: "alice", score: 14, solvedCount: 4, penalty: 20 },
-      { rank: 2, userId: "user-002", username: "bob", score: 11, solvedCount: 3, penalty: 45 },
-      { rank: 3, userId: "user-003", username: "carol", score: 8, solvedCount: 2, penalty: 30 },
+      { rank: 1, userId: 'user-001', username: 'alice', score: 14, solvedCount: 4, penalty: 20 },
+      { rank: 2, userId: 'user-002', username: 'bob', score: 11, solvedCount: 3, penalty: 45 },
+      { rank: 3, userId: 'user-003', username: 'carol', score: 8, solvedCount: 2, penalty: 30 },
     ];
 
     const total = entries.length;
