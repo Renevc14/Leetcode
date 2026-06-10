@@ -1,8 +1,8 @@
 // Función de routing generada automáticamente por Smithy (typescript-ssdk-codegen)
-import { getProblemsServiceServiceHandler } from "@com.leetcode/problems-server";
-import { IncomingMessage, ServerResponse, createServer } from "http";
-import { convertRequest, writeResponse } from "@aws-smithy/server-node";
-import { ProblemsServiceImpl, createInitialContext } from "./ProblemsServiceImpl";
+import { getProblemsServiceServiceHandler } from '@com.leetcode/problems-api-server';
+import { IncomingMessage, ServerResponse, createServer } from 'http';
+import { convertRequest, writeResponse } from '@aws-smithy/server-node';
+import { ProblemsServiceImpl, createInitialContext } from './ProblemsServiceImpl';
 
 const PORT = process.env.PORT ? parseInt(process.env.PORT) : 3001;
 
@@ -15,14 +15,13 @@ const serviceHandler = getProblemsServiceServiceHandler(service);
 // Contexto compartido (en producción: pool de conexiones a RDS PostgreSQL)
 const ctx = createInitialContext();
 
-const server = createServer(async (
-  req: IncomingMessage,
-  res: ServerResponse<IncomingMessage> & { req: IncomingMessage }
-) => {
-  const httpRequest = convertRequest(req);
-  const httpResponse = await serviceHandler.handle(httpRequest, ctx);
-  return writeResponse(httpResponse, res);
-});
+const server = createServer(
+  async (req: IncomingMessage, res: ServerResponse<IncomingMessage> & { req: IncomingMessage }) => {
+    const httpRequest = convertRequest(req);
+    const httpResponse = await serviceHandler.handle(httpRequest, ctx);
+    return writeResponse(httpResponse, res);
+  },
+);
 
 server.listen(PORT, () => {
   console.log(`[problems-service] Server running on http://localhost:${PORT}`);
