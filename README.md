@@ -19,6 +19,8 @@ Sistema de autenticación y autorización para una plataforma tipo LeetCode. Usa
   - `submissions-service` (envíos e historial)
   - `users-service` (perfiles y stats)
   - `contests-service` (concursos y leaderboard)
+- `smithy/` — Modelos Smithy (IDL) de los 4 servicios y configuración de codegen (`smithy-build.json`).
+- `packages/` — SDKs TypeScript generados por Smithy (server + client) y contratos de OpenAPI para cada servicio.
 - `databases/` — Scripts SQL de inicialización para cada servicio (una DB por servicio).
 - `compose.yaml` — `docker compose` para levantar los 4 Postgres + Redis en local.
 
@@ -35,20 +37,38 @@ Sistema de autenticación y autorización para una plataforma tipo LeetCode. Usa
 
 ## Quick start local
 
+### Requisitos previos
+
+Para este proyecto se necesita contar con las siguientes herramientas:
+
+- Docker
+- Node.js (>= v20)
+- pnpm (`corepack enable && corepack prepare pnpm@11.3.0 --activate`)
+- Smithy CLI
+
+### Comandos
+
 ```bash
 git clone https://github.com/Renevc14/Leetcode.git
 cd Leetcode
+
+# Generar los SDKs y contratos OpenAPI con Smithy CLI
+pnpm smithy:build
 
 # Levantar las bases de datos locales
 cp .env.example .env
 docker compose up -d
 
+# Instalar todas las dependencias del workspace
+pnpm install
+
+# Constuir los SDKs generados
+pnpm smithy:build:sdk
+
 # Frontend
-npm install
-npm --prefix frontend install
 cp frontend/.env.example frontend/.env
 # Editar frontend/.env con los outputs del deploy de AWS_Leetcode
-npm --prefix frontend run dev   # http://localhost:5173
+pnpm --filter @leetcode/frontend dev   # http://localhost:5173
 ```
 
 ### Puertos locales de las DBs
@@ -77,8 +97,8 @@ VITE_API_BASE_URL=https://<api-id>.execute-api.us-east-1.amazonaws.com
 ## Validación local
 
 ```bash
-npm --prefix frontend run lint
-npm --prefix frontend run build
+pnpm --filter @leetcode/frontend lint
+pnpm --filter @leetcode/frontend build
 ```
 
 ## Usuarios de prueba
