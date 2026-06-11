@@ -9,6 +9,8 @@
   },
   "scripts": {
     "prepare": "husky",
+    "smithy:build": "pnpm --filter @leetcode/smithy run smithy:build",
+    "smithy:build:sdk": "pnpm --filter '@com.leetcode/*' run build",
     "build": "pnpm -r run build",
     "typecheck": "tsc -b --noEmit",
     "lint": "eslint .",

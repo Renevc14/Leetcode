@@ -1,6 +1,7 @@
 packages:
   - 'frontend'
   - 'microservices/*'
+  - 'smithy'
   - 'packages/*/*'
 allowBuilds:
   esbuild: true
