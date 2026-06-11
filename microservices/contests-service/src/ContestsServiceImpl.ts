@@ -1,4 +1,8 @@
 import {
+  ContestStatus,
+  Difficulty,
+} from '@com.leetcode/contests-api-server';
+import type {
   ListContestsServerInput,
   ListContestsServerOutput,
   GetContestServerInput,
@@ -14,8 +18,6 @@ import {
   GetLeaderboardServerInput,
   GetLeaderboardServerOutput,
   ContestsServiceService,
-  ContestStatus,
-  Difficulty,
 } from '@com.leetcode/contests-api-server';
 
 interface ContestRecord {
@@ -101,29 +103,35 @@ function newId(): string {
   return `contest-${String(idCounter++).padStart(3, '0')}`;
 }
 
+class ClientFaultError extends Error {
+  readonly $fault = 'client' as const;
+  readonly $metadata: Record<string, never> = {};
+
+  constructor(message: string) {
+    super(message);
+    this.name = 'ClientFaultError';
+  }
+}
+
 function notFound(message: string): never {
-  throw { $fault: 'client', $metadata: {}, message } as any;
+  throw new ClientFaultError(message);
 }
 
 function conflict(message: string): never {
-  throw { $fault: 'client', $metadata: {}, message } as any;
+  throw new ClientFaultError(message);
 }
 
 function requireString(value: string | undefined, fieldName: string): string {
   if (!value) {
-    throw {
-      $fault: 'client',
-      $metadata: {},
-      message: `Missing required field '${fieldName}'`,
-    } as any;
+    throw new ClientFaultError(`Missing required field '${fieldName}'`);
   }
   return value;
 }
 
 const CURRENT_USER_ID = 'user-001';
 
-export const contestsServiceImpl: ContestsServiceService<{}> = {
-  async ListContests(input: ListContestsServerInput): Promise<ListContestsServerOutput> {
+export const contestsServiceImpl: ContestsServiceService<Record<string, never>> = {
+  ListContests(input: ListContestsServerInput): Promise<ListContestsServerOutput> {
     let items = Array.from(db.values());
     if (input.status) items = items.filter((c) => c.status === input.status);
 
@@ -132,7 +140,7 @@ export const contestsServiceImpl: ContestsServiceService<{}> = {
     const pageSize = input.pageSize ?? 20;
     const paged = items.slice((page - 1) * pageSize, page * pageSize);
 
-    return {
+    return Promise.resolve({
       items: paged.map((c) => ({
         id: c.id,
         title: c.title,
@@ -143,14 +151,14 @@ export const contestsServiceImpl: ContestsServiceService<{}> = {
       })),
       total,
       page,
-    };
+    });
   },
 
-  async GetContest(input: GetContestServerInput): Promise<GetContestServerOutput> {
+  GetContest(input: GetContestServerInput): Promise<GetContestServerOutput> {
     const contestId = requireString(input.contestId, 'contestId');
     const c = db.get(contestId);
     if (!c) notFound(`Contest '${contestId}' not found`);
-    return {
+    return Promise.resolve({
       id: c.id,
       title: c.title,
       description: c.description,
@@ -159,10 +167,10 @@ export const contestsServiceImpl: ContestsServiceService<{}> = {
       endTime: c.endTime,
       participantCount: c.participantCount,
       isEnrolled: c.enrolledUserIds.has(CURRENT_USER_ID),
-    };
+    });
   },
 
-  async CreateContest(input: CreateContestServerInput): Promise<CreateContestServerOutput> {
+  CreateContest(input: CreateContestServerInput): Promise<CreateContestServerOutput> {
     const now = new Date().toISOString();
     const title = requireString(input.title, 'title');
     const description = requireString(input.description, 'description');
@@ -183,10 +191,10 @@ export const contestsServiceImpl: ContestsServiceService<{}> = {
       enrolledUserIds: new Set(),
     });
 
-    return { id, title, status };
+    return Promise.resolve({ id, title, status });
   },
 
-  async EnrollContest(input: EnrollContestServerInput): Promise<EnrollContestServerOutput> {
+  EnrollContest(input: EnrollContestServerInput): Promise<EnrollContestServerOutput> {
     const contestId = requireString(input.contestId, 'contestId');
     const c = db.get(contestId);
     if (!c) notFound(`Contest '${contestId}' not found`);
@@ -195,10 +203,10 @@ export const contestsServiceImpl: ContestsServiceService<{}> = {
     }
     c.enrolledUserIds.add(CURRENT_USER_ID);
     c.participantCount += 1;
-    return { message: 'Successfully enrolled in contest' };
+    return Promise.resolve({ message: 'Successfully enrolled in contest' });
   },
 
-  async UnenrollContest(input: UnenrollContestServerInput): Promise<UnenrollContestServerOutput> {
+  UnenrollContest(input: UnenrollContestServerInput): Promise<UnenrollContestServerOutput> {
     const contestId = requireString(input.contestId, 'contestId');
     const c = db.get(contestId);
     if (!c) notFound(`Contest '${contestId}' not found`);
@@ -207,10 +215,10 @@ export const contestsServiceImpl: ContestsServiceService<{}> = {
     }
     c.enrolledUserIds.delete(CURRENT_USER_ID);
     c.participantCount = Math.max(0, c.participantCount - 1);
-    return { message: 'Successfully unenrolled from contest' };
+    return Promise.resolve({ message: 'Successfully unenrolled from contest' });
   },
 
-  async GetContestProblems(
+  GetContestProblems(
     input: GetContestProblemsServerInput,
   ): Promise<GetContestProblemsServerOutput> {
     const contestId = requireString(input.contestId, 'contestId');
@@ -222,10 +230,10 @@ export const contestsServiceImpl: ContestsServiceService<{}> = {
       return { problemId: pid, title: meta.title, difficulty: meta.difficulty, order: idx + 1 };
     });
 
-    return { items };
+    return Promise.resolve({ items });
   },
 
-  async GetLeaderboard(input: GetLeaderboardServerInput): Promise<GetLeaderboardServerOutput> {
+  GetLeaderboard(input: GetLeaderboardServerInput): Promise<GetLeaderboardServerOutput> {
     const contestId = requireString(input.contestId, 'contestId');
     const c = db.get(contestId);
     if (!c) notFound(`Contest '${contestId}' not found`);
@@ -241,6 +249,6 @@ export const contestsServiceImpl: ContestsServiceService<{}> = {
     const pageSize = input.pageSize ?? 20;
     const paged = entries.slice((page - 1) * pageSize, page * pageSize);
 
-    return { items: paged, total, page };
+    return Promise.resolve({ items: paged, total, page });
   },
 };

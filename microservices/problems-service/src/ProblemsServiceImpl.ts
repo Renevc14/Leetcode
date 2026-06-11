@@ -1,5 +1,10 @@
 // Tipos e interfaz de servicio — generados automáticamente por Smithy (typescript-ssdk-codegen)
 import {
+  Difficulty,
+  Language,
+  ProblemNotFoundError,
+} from '@com.leetcode/problems-api-server';
+import type {
   ProblemsServiceService,
   ListProblemsServerInput,
   ListProblemsServerOutput,
@@ -11,11 +16,6 @@ import {
   UpdateProblemServerOutput,
   DisableProblemServerInput,
   DisableProblemServerOutput,
-  ProblemNotFoundError,
-  ForbiddenError,
-  UnauthorizedError,
-  Difficulty,
-  Language,
 } from '@com.leetcode/problems-api-server';
 import { randomUUID } from 'crypto';
 
@@ -197,7 +197,7 @@ function normalizeTestCases(
 // ─── Implementación del servicio ───────────────────────────────────────────────
 
 export class ProblemsServiceImpl implements ProblemsServiceService<ProblemsContext> {
-  async ListProblems(
+  ListProblems(
     input: ListProblemsServerInput,
     ctx: ProblemsContext,
   ): Promise<ListProblemsServerOutput> {
@@ -220,7 +220,7 @@ export class ProblemsServiceImpl implements ProblemsServiceService<ProblemsConte
     const start = (page - 1) * pageSize;
     const paged = results.slice(start, start + pageSize);
 
-    return {
+    return Promise.resolve({
       items: paged.map((p) => ({
         id: p.id,
         title: p.title,
@@ -233,10 +233,10 @@ export class ProblemsServiceImpl implements ProblemsServiceService<ProblemsConte
       })),
       total,
       page,
-    };
+    });
   }
 
-  async GetProblem(
+  GetProblem(
     input: GetProblemServerInput,
     ctx: ProblemsContext,
   ): Promise<GetProblemServerOutput> {
@@ -249,7 +249,7 @@ export class ProblemsServiceImpl implements ProblemsServiceService<ProblemsConte
       });
     }
 
-    return {
+    return Promise.resolve({
       id: problem.id,
       title: problem.title,
       difficulty: problem.difficulty,
@@ -266,10 +266,10 @@ export class ProblemsServiceImpl implements ProblemsServiceService<ProblemsConte
       publicTestCases: problem.testCases
         .filter((tc) => tc.isPublic)
         .map((tc) => ({ input: tc.input, expectedOutput: tc.expectedOutput })),
-    };
+    });
   }
 
-  async CreateProblem(
+  CreateProblem(
     input: CreateProblemServerInput,
     ctx: ProblemsContext,
   ): Promise<CreateProblemServerOutput> {
@@ -305,10 +305,10 @@ export class ProblemsServiceImpl implements ProblemsServiceService<ProblemsConte
     ctx.problems.set(id, newProblem);
     console.log(`[problems-service] Problem created: ${id} - ${title}`);
 
-    return { id };
+    return Promise.resolve({ id });
   }
 
-  async UpdateProblem(
+  UpdateProblem(
     input: UpdateProblemServerInput,
     ctx: ProblemsContext,
   ): Promise<UpdateProblemServerOutput> {
@@ -338,10 +338,10 @@ export class ProblemsServiceImpl implements ProblemsServiceService<ProblemsConte
     ctx.problems.set(problem.id, problem);
     console.log(`[problems-service] Problem updated: ${problem.id}`);
 
-    return { id: problem.id };
+    return Promise.resolve({ id: problem.id });
   }
 
-  async DisableProblem(
+  DisableProblem(
     input: DisableProblemServerInput,
     ctx: ProblemsContext,
   ): Promise<DisableProblemServerOutput> {
@@ -359,8 +359,8 @@ export class ProblemsServiceImpl implements ProblemsServiceService<ProblemsConte
     ctx.problems.set(problem.id, problem);
     console.log(`[problems-service] Problem disabled: ${problem.id}`);
 
-    return {
+    return Promise.resolve({
       message: `Problem '${problemId}' has been disabled. Submission history preserved.`,
-    };
+    });
   }
 }

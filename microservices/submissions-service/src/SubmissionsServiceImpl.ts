@@ -1,4 +1,9 @@
 import {
+  Language,
+  SubmissionStatus,
+  Verdict,
+} from '@com.leetcode/submissions-api-server';
+import type {
   RunCodeServerInput,
   RunCodeServerOutput,
   SubmitServerInput,
@@ -10,9 +15,6 @@ import {
   GetSubmissionCodeServerInput,
   GetSubmissionCodeServerOutput,
   SubmissionsServiceService,
-  Language,
-  SubmissionStatus,
-  Verdict,
 } from '@com.leetcode/submissions-api-server';
 
 interface SubmissionRecord {
@@ -108,6 +110,16 @@ function newId(): string {
   return `sub-${String(idCounter++).padStart(3, '0')}`;
 }
 
+class ClientFaultError extends Error {
+  readonly $fault = 'client' as const;
+  readonly $metadata: Record<string, never> = {};
+
+  constructor(message: string) {
+    super(message);
+    this.name = 'ClientFaultError';
+  }
+}
+
 function simulateResult(id: string) {
   setTimeout(() => {
     const rec = db.get(id);
@@ -120,37 +132,25 @@ function simulateResult(id: string) {
 }
 
 function notFound(message: string): never {
-  throw { $fault: 'client', $metadata: {}, message } as any;
-}
-
-function unauthorized(): never {
-  throw { $fault: 'client', $metadata: {}, message: 'Unauthorized' } as any;
+  throw new ClientFaultError(message);
 }
 
 function requireString(value: string | undefined, fieldName: string): string {
   if (!value) {
-    throw {
-      $fault: 'client',
-      $metadata: {},
-      message: `Missing required field '${fieldName}'`,
-    } as any;
+    throw new ClientFaultError(`Missing required field '${fieldName}'`);
   }
   return value;
 }
 
 function requireValue<T>(value: T | undefined, fieldName: string): T {
   if (value === undefined) {
-    throw {
-      $fault: 'client',
-      $metadata: {},
-      message: `Missing required field '${fieldName}'`,
-    } as any;
+    throw new ClientFaultError(`Missing required field '${fieldName}'`);
   }
   return value;
 }
 
-export const submissionsServiceImpl: SubmissionsServiceService<{}> = {
-  async RunCode(input: RunCodeServerInput): Promise<RunCodeServerOutput> {
+export const submissionsServiceImpl: SubmissionsServiceService<Record<string, never>> = {
+  RunCode(input: RunCodeServerInput): Promise<RunCodeServerOutput> {
     const problemId = requireString(input.problemId, 'problemId');
     const language = requireValue(input.language, 'language');
     const sourceCode = requireString(input.sourceCode, 'sourceCode');
@@ -166,10 +166,10 @@ export const submissionsServiceImpl: SubmissionsServiceService<{}> = {
       createdAt: new Date().toISOString(),
     });
     simulateResult(id);
-    return { submissionId: id, status: SubmissionStatus.QUEUED };
+    return Promise.resolve({ submissionId: id, status: SubmissionStatus.QUEUED });
   },
 
-  async Submit(input: SubmitServerInput): Promise<SubmitServerOutput> {
+  Submit(input: SubmitServerInput): Promise<SubmitServerOutput> {
     const problemId = requireString(input.problemId, 'problemId');
     const language = requireValue(input.language, 'language');
     const sourceCode = requireString(input.sourceCode, 'sourceCode');
@@ -185,14 +185,14 @@ export const submissionsServiceImpl: SubmissionsServiceService<{}> = {
       createdAt: new Date().toISOString(),
     });
     simulateResult(id);
-    return { submissionId: id, status: SubmissionStatus.QUEUED };
+    return Promise.resolve({ submissionId: id, status: SubmissionStatus.QUEUED });
   },
 
-  async GetSubmission(input: GetSubmissionServerInput): Promise<GetSubmissionServerOutput> {
+  GetSubmission(input: GetSubmissionServerInput): Promise<GetSubmissionServerOutput> {
     const submissionId = requireString(input.submissionId, 'submissionId');
     const rec = db.get(submissionId);
     if (!rec) notFound(`Submission '${submissionId}' not found`);
-    return {
+    return Promise.resolve({
       id: rec.id,
       problemId: rec.problemId,
       userId: rec.userId,
@@ -204,10 +204,10 @@ export const submissionsServiceImpl: SubmissionsServiceService<{}> = {
       failedTestCaseIndex: rec.failedTestCaseIndex,
       compileError: rec.compileError,
       createdAt: rec.createdAt,
-    };
+    });
   },
 
-  async ListSubmissions(input: ListSubmissionsServerInput): Promise<ListSubmissionsServerOutput> {
+  ListSubmissions(input: ListSubmissionsServerInput): Promise<ListSubmissionsServerOutput> {
     let items = Array.from(db.values()).filter((r) => !r.isRun);
     if (input.problemId) items = items.filter((r) => r.problemId === input.problemId);
     if (input.userId) items = items.filter((r) => r.userId === input.userId);
@@ -218,7 +218,7 @@ export const submissionsServiceImpl: SubmissionsServiceService<{}> = {
     const pageSize = input.pageSize ?? 20;
     const paged = items.slice((page - 1) * pageSize, page * pageSize);
 
-    return {
+    return Promise.resolve({
       items: paged.map((r) => ({
         id: r.id,
         problemId: r.problemId,
@@ -232,15 +232,15 @@ export const submissionsServiceImpl: SubmissionsServiceService<{}> = {
       })),
       total,
       page,
-    };
+    });
   },
 
-  async GetSubmissionCode(
+  GetSubmissionCode(
     input: GetSubmissionCodeServerInput,
   ): Promise<GetSubmissionCodeServerOutput> {
     const submissionId = requireString(input.submissionId, 'submissionId');
     const rec = db.get(submissionId);
     if (!rec) notFound(`Submission '${submissionId}' not found`);
-    return { sourceCode: rec.sourceCode, language: rec.language };
+    return Promise.resolve({ sourceCode: rec.sourceCode, language: rec.language });
   },
 };

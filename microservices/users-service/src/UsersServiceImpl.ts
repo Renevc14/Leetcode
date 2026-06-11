@@ -1,5 +1,9 @@
 // Tipos e interfaz de servicio — generados automáticamente por Smithy (typescript-ssdk-codegen)
 import {
+  UnauthorizedError,
+  UserNotFoundError,
+} from '@com.leetcode/users-api-server';
+import type {
   UsersServiceService,
   GetMeServerInput,
   GetMeServerOutput,
@@ -7,8 +11,6 @@ import {
   GetUserServerOutput,
   GetUserStatsServerInput,
   GetUserStatsServerOutput,
-  UnauthorizedError,
-  UserNotFoundError,
 } from '@com.leetcode/users-api-server';
 
 // ─── Tipos internos ────────────────────────────────────────────────────────────
@@ -112,7 +114,7 @@ function requireString(value: string | undefined, fieldName: string): string {
 // ─── Implementación del servicio ───────────────────────────────────────────────
 
 export class UsersServiceImpl implements UsersServiceService<UsersContext> {
-  async GetMe(_input: GetMeServerInput, ctx: UsersContext): Promise<GetMeServerOutput> {
+  GetMe(_input: GetMeServerInput, ctx: UsersContext): Promise<GetMeServerOutput> {
     // En producción: extraer userId del claim 'sub' del JWT validado por API Gateway
     if (!ctx.currentUserId) {
       throw new UnauthorizedError({
@@ -127,16 +129,16 @@ export class UsersServiceImpl implements UsersServiceService<UsersContext> {
       });
     }
 
-    return {
+    return Promise.resolve({
       id: user.id,
       username: user.username,
       email: user.email,
       role: user.role,
       createdAt: user.createdAt,
-    };
+    });
   }
 
-  async GetUser(input: GetUserServerInput, ctx: UsersContext): Promise<GetUserServerOutput> {
+  GetUser(input: GetUserServerInput, ctx: UsersContext): Promise<GetUserServerOutput> {
     const userId = requireString(input.userId, 'userId');
     const user = ctx.users.get(userId);
 
@@ -147,14 +149,14 @@ export class UsersServiceImpl implements UsersServiceService<UsersContext> {
     }
 
     // Perfil público — nunca se expone email ni datos sensibles
-    return {
+    return Promise.resolve({
       id: user.id,
       username: user.username,
       createdAt: user.createdAt,
-    };
+    });
   }
 
-  async GetUserStats(
+  GetUserStats(
     input: GetUserStatsServerInput,
     ctx: UsersContext,
   ): Promise<GetUserStatsServerOutput> {
@@ -173,7 +175,7 @@ export class UsersServiceImpl implements UsersServiceService<UsersContext> {
         ? Math.round((stats.acceptedSubmissions / stats.totalSubmissions) * 100)
         : 0;
 
-    return {
+    return Promise.resolve({
       userId: user.id,
       solvedByDifficulty: {
         easy: stats.solvedEasy,
@@ -183,6 +185,6 @@ export class UsersServiceImpl implements UsersServiceService<UsersContext> {
       acceptanceRate,
       contestsPlayed: stats.contestsPlayed,
       totalSubmissions: stats.totalSubmissions,
-    };
+    });
   }
 }

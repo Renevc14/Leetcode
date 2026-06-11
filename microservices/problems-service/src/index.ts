@@ -1,6 +1,7 @@
 // Función de routing generada automáticamente por Smithy (typescript-ssdk-codegen)
 import { getProblemsServiceServiceHandler } from '@com.leetcode/problems-api-server';
-import { IncomingMessage, ServerResponse, createServer } from 'http';
+import { createServer } from 'http';
+import type { IncomingMessage, ServerResponse } from 'http';
 import { convertRequest, writeResponse } from '@aws-smithy/server-node';
 import { ProblemsServiceImpl, createInitialContext } from './ProblemsServiceImpl.js';
 
@@ -17,10 +18,16 @@ const serviceHandler = getProblemsServiceServiceHandler(service);
 const ctx = createInitialContext();
 
 const server = createServer(
-  async (req: IncomingMessage, res: ServerResponse<IncomingMessage> & { req: IncomingMessage }) => {
+  (req: IncomingMessage, res: ServerResponse<IncomingMessage> & { req: IncomingMessage }) => {
     const httpRequest = convertRequest(req);
-    const httpResponse = await serviceHandler.handle(httpRequest, ctx);
-    return writeResponse(httpResponse, res);
+    void serviceHandler
+      .handle(httpRequest, ctx)
+      .then((httpResponse) => writeResponse(httpResponse, res))
+      .catch((error: unknown) => {
+        console.error('[problems-service] Request handling error', error);
+        res.statusCode = 500;
+        res.end('Internal Server Error');
+      });
   },
 );
 
