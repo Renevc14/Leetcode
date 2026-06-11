@@ -2,9 +2,10 @@
 import { getUsersServiceServiceHandler } from '@com.leetcode/users-api-server';
 import { IncomingMessage, ServerResponse, createServer } from 'http';
 import { convertRequest, writeResponse } from '@aws-smithy/server-node';
-import { UsersServiceImpl, createInitialContext } from './UsersServiceImpl';
+import { UsersServiceImpl, createInitialContext } from './UsersServiceImpl.js';
 
-const PORT = process.env.PORT ? parseInt(process.env.PORT) : 3002;
+const rawPort = process.env['PORT'];
+const PORT = rawPort ? parseInt(rawPort, 10) : 3002;
 
 // Instancia de la implementación del servicio
 const service = new UsersServiceImpl();

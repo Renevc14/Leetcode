@@ -1,7 +1,7 @@
 import { IncomingMessage, ServerResponse, createServer } from 'http';
 import { convertRequest, writeResponse } from '@aws-smithy/server-node';
 import { getContestsServiceServiceHandler } from '@com.leetcode/contests-api-server';
-import { contestsServiceImpl } from './ContestsServiceImpl';
+import { contestsServiceImpl } from './ContestsServiceImpl.js';
 
 const serviceHandler = getContestsServiceServiceHandler(contestsServiceImpl);
 

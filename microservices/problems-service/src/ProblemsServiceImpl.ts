@@ -159,6 +159,41 @@ function validateHasPublicAndHiddenTestCases(testCases: { isPublic: boolean }[])
   }
 }
 
+function requireString(value: string | undefined, fieldName: string): string {
+  if (!value) {
+    throw new Error(`Missing required field '${fieldName}'.`);
+  }
+  return value;
+}
+
+function requireNumber(value: number | undefined, fieldName: string): number {
+  if (value === undefined) {
+    throw new Error(`Missing required field '${fieldName}'.`);
+  }
+  return value;
+}
+
+function requireValue<T>(value: T | undefined, fieldName: string): T {
+  if (value === undefined) {
+    throw new Error(`Missing required field '${fieldName}'.`);
+  }
+  return value;
+}
+
+function normalizeTestCases(
+  testCases: Array<{
+    input: string | undefined;
+    expectedOutput: string | undefined;
+    isPublic: boolean | undefined;
+  }>,
+): TestCaseRecord[] {
+  return testCases.map((tc, index) => ({
+    input: requireString(tc.input, `testCases[${index}].input`),
+    expectedOutput: requireString(tc.expectedOutput, `testCases[${index}].expectedOutput`),
+    isPublic: requireValue(tc.isPublic, `testCases[${index}].isPublic`),
+  }));
+}
+
 // ─── Implementación del servicio ───────────────────────────────────────────────
 
 export class ProblemsServiceImpl implements ProblemsServiceService<ProblemsContext> {
@@ -205,11 +240,12 @@ export class ProblemsServiceImpl implements ProblemsServiceService<ProblemsConte
     input: GetProblemServerInput,
     ctx: ProblemsContext,
   ): Promise<GetProblemServerOutput> {
-    const problem = ctx.problems.get(input.problemId);
+    const problemId = requireString(input.problemId, 'problemId');
+    const problem = ctx.problems.get(problemId);
 
     if (!problem || !problem.isPublished) {
       throw new ProblemNotFoundError({
-        message: `Problem '${input.problemId}' does not exist or is disabled.`,
+        message: `Problem '${problemId}' does not exist or is disabled.`,
       });
     }
 
@@ -238,25 +274,28 @@ export class ProblemsServiceImpl implements ProblemsServiceService<ProblemsConte
     ctx: ProblemsContext,
   ): Promise<CreateProblemServerOutput> {
     // En producción: validar JWT claim roles === SETTER | ADMIN
-    validateHasPublicAndHiddenTestCases(input.testCases ?? []);
+    const title = requireString(input.title, 'title');
+    const statementMarkdown = requireString(input.statementMarkdown, 'statementMarkdown');
+    const constraints = requireString(input.constraints, 'constraints');
+    const difficulty = requireValue(input.difficulty, 'difficulty');
+    const timeLimitMs = requireNumber(input.timeLimitMs, 'timeLimitMs');
+    const memoryLimitMb = requireNumber(input.memoryLimitMb, 'memoryLimitMb');
+    const testCases = normalizeTestCases(input.testCases ?? []);
+    validateHasPublicAndHiddenTestCases(testCases);
 
     const id = `prob-${randomUUID().slice(0, 8)}`;
     const newProblem: ProblemRecord = {
       id,
-      slug: input.title.toLowerCase().replace(/\s+/g, '-'),
-      title: input.title,
-      statementMarkdown: input.statementMarkdown,
-      constraints: input.constraints,
-      difficulty: input.difficulty,
+      slug: title.toLowerCase().replace(/\s+/g, '-'),
+      title,
+      statementMarkdown,
+      constraints,
+      difficulty,
       categories: input.categories ?? [],
-      timeLimitMs: input.timeLimitMs,
-      memoryLimitMb: input.memoryLimitMb,
+      timeLimitMs,
+      memoryLimitMb,
       allowedLanguages: (input.allowedLanguages ?? []) as Language[],
-      testCases: (input.testCases ?? []).map((tc) => ({
-        input: tc.input,
-        expectedOutput: tc.expectedOutput,
-        isPublic: tc.isPublic,
-      })),
+      testCases,
       isPublished: true,
       totalSubmissions: 0,
       acceptedSubmissions: 0,
@@ -264,7 +303,7 @@ export class ProblemsServiceImpl implements ProblemsServiceService<ProblemsConte
     };
 
     ctx.problems.set(id, newProblem);
-    console.log(`[problems-service] Problem created: ${id} - ${input.title}`);
+    console.log(`[problems-service] Problem created: ${id} - ${title}`);
 
     return { id };
   }
@@ -273,11 +312,12 @@ export class ProblemsServiceImpl implements ProblemsServiceService<ProblemsConte
     input: UpdateProblemServerInput,
     ctx: ProblemsContext,
   ): Promise<UpdateProblemServerOutput> {
-    const problem = ctx.problems.get(input.problemId);
+    const problemId = requireString(input.problemId, 'problemId');
+    const problem = ctx.problems.get(problemId);
 
     if (!problem) {
       throw new ProblemNotFoundError({
-        message: `Problem '${input.problemId}' not found.`,
+        message: `Problem '${problemId}' not found.`,
       });
     }
 
@@ -292,11 +332,7 @@ export class ProblemsServiceImpl implements ProblemsServiceService<ProblemsConte
     if (input.allowedLanguages !== undefined)
       problem.allowedLanguages = input.allowedLanguages as Language[];
     if (input.testCases !== undefined) {
-      problem.testCases = input.testCases.map((tc) => ({
-        input: tc.input,
-        expectedOutput: tc.expectedOutput,
-        isPublic: tc.isPublic,
-      }));
+      problem.testCases = normalizeTestCases(input.testCases);
     }
 
     ctx.problems.set(problem.id, problem);
@@ -309,11 +345,12 @@ export class ProblemsServiceImpl implements ProblemsServiceService<ProblemsConte
     input: DisableProblemServerInput,
     ctx: ProblemsContext,
   ): Promise<DisableProblemServerOutput> {
-    const problem = ctx.problems.get(input.problemId);
+    const problemId = requireString(input.problemId, 'problemId');
+    const problem = ctx.problems.get(problemId);
 
     if (!problem) {
       throw new ProblemNotFoundError({
-        message: `Problem '${input.problemId}' not found.`,
+        message: `Problem '${problemId}' not found.`,
       });
     }
 
@@ -323,7 +360,7 @@ export class ProblemsServiceImpl implements ProblemsServiceService<ProblemsConte
     console.log(`[problems-service] Problem disabled: ${problem.id}`);
 
     return {
-      message: `Problem '${input.problemId}' has been disabled. Submission history preserved.`,
+      message: `Problem '${problemId}' has been disabled. Submission history preserved.`,
     };
   }
 }

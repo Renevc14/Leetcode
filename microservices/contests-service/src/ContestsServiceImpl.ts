@@ -109,6 +109,17 @@ function conflict(message: string): never {
   throw { $fault: 'client', $metadata: {}, message } as any;
 }
 
+function requireString(value: string | undefined, fieldName: string): string {
+  if (!value) {
+    throw {
+      $fault: 'client',
+      $metadata: {},
+      message: `Missing required field '${fieldName}'`,
+    } as any;
+  }
+  return value;
+}
+
 const CURRENT_USER_ID = 'user-001';
 
 export const contestsServiceImpl: ContestsServiceService<{}> = {
@@ -136,8 +147,9 @@ export const contestsServiceImpl: ContestsServiceService<{}> = {
   },
 
   async GetContest(input: GetContestServerInput): Promise<GetContestServerOutput> {
-    const c = db.get(input.contestId);
-    if (!c) notFound(`Contest '${input.contestId}' not found`);
+    const contestId = requireString(input.contestId, 'contestId');
+    const c = db.get(contestId);
+    if (!c) notFound(`Contest '${contestId}' not found`);
     return {
       id: c.id,
       title: c.title,
@@ -152,28 +164,32 @@ export const contestsServiceImpl: ContestsServiceService<{}> = {
 
   async CreateContest(input: CreateContestServerInput): Promise<CreateContestServerOutput> {
     const now = new Date().toISOString();
-    const startTime = input.startTime;
+    const title = requireString(input.title, 'title');
+    const description = requireString(input.description, 'description');
+    const startTime = requireString(input.startTime, 'startTime');
+    const endTime = requireString(input.endTime, 'endTime');
     const status = now < startTime ? ContestStatus.UPCOMING : ContestStatus.LIVE;
 
     const id = newId();
     db.set(id, {
       id,
-      title: input.title,
-      description: input.description,
+      title,
+      description,
       status,
-      startTime: input.startTime,
-      endTime: input.endTime,
+      startTime,
+      endTime,
       participantCount: 0,
       problemIds: input.problemIds ?? [],
       enrolledUserIds: new Set(),
     });
 
-    return { id, title: input.title, status };
+    return { id, title, status };
   },
 
   async EnrollContest(input: EnrollContestServerInput): Promise<EnrollContestServerOutput> {
-    const c = db.get(input.contestId);
-    if (!c) notFound(`Contest '${input.contestId}' not found`);
+    const contestId = requireString(input.contestId, 'contestId');
+    const c = db.get(contestId);
+    if (!c) notFound(`Contest '${contestId}' not found`);
     if (c.enrolledUserIds.has(CURRENT_USER_ID)) {
       conflict('Already enrolled in this contest');
     }
@@ -183,8 +199,9 @@ export const contestsServiceImpl: ContestsServiceService<{}> = {
   },
 
   async UnenrollContest(input: UnenrollContestServerInput): Promise<UnenrollContestServerOutput> {
-    const c = db.get(input.contestId);
-    if (!c) notFound(`Contest '${input.contestId}' not found`);
+    const contestId = requireString(input.contestId, 'contestId');
+    const c = db.get(contestId);
+    if (!c) notFound(`Contest '${contestId}' not found`);
     if (!c.enrolledUserIds.has(CURRENT_USER_ID)) {
       conflict('Not enrolled in this contest');
     }
@@ -196,8 +213,9 @@ export const contestsServiceImpl: ContestsServiceService<{}> = {
   async GetContestProblems(
     input: GetContestProblemsServerInput,
   ): Promise<GetContestProblemsServerOutput> {
-    const c = db.get(input.contestId);
-    if (!c) notFound(`Contest '${input.contestId}' not found`);
+    const contestId = requireString(input.contestId, 'contestId');
+    const c = db.get(contestId);
+    if (!c) notFound(`Contest '${contestId}' not found`);
 
     const items: ContestProblemRecord[] = c.problemIds.map((pid, idx) => {
       const meta = problemTitles[pid] ?? { title: `Problem ${pid}`, difficulty: Difficulty.MEDIUM };
@@ -208,8 +226,9 @@ export const contestsServiceImpl: ContestsServiceService<{}> = {
   },
 
   async GetLeaderboard(input: GetLeaderboardServerInput): Promise<GetLeaderboardServerOutput> {
-    const c = db.get(input.contestId);
-    if (!c) notFound(`Contest '${input.contestId}' not found`);
+    const contestId = requireString(input.contestId, 'contestId');
+    const c = db.get(contestId);
+    if (!c) notFound(`Contest '${contestId}' not found`);
 
     const entries = [
       { rank: 1, userId: 'user-001', username: 'alice', score: 14, solvedCount: 4, penalty: 20 },

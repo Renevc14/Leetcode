@@ -2,9 +2,10 @@
 import { getProblemsServiceServiceHandler } from '@com.leetcode/problems-api-server';
 import { IncomingMessage, ServerResponse, createServer } from 'http';
 import { convertRequest, writeResponse } from '@aws-smithy/server-node';
-import { ProblemsServiceImpl, createInitialContext } from './ProblemsServiceImpl';
+import { ProblemsServiceImpl, createInitialContext } from './ProblemsServiceImpl.js';
 
-const PORT = process.env.PORT ? parseInt(process.env.PORT) : 3001;
+const rawPort = process.env['PORT'];
+const PORT = rawPort ? parseInt(rawPort, 10) : 3001;
 
 // Instancia de la implementación del servicio
 const service = new ProblemsServiceImpl();

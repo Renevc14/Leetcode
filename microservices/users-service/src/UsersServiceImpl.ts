@@ -100,6 +100,15 @@ export function createInitialContext(): UsersContext {
   return { users, currentUserId: 'user-001' };
 }
 
+function requireString(value: string | undefined, fieldName: string): string {
+  if (!value) {
+    throw new UserNotFoundError({
+      message: `Missing required field '${fieldName}'.`,
+    });
+  }
+  return value;
+}
+
 // ─── Implementación del servicio ───────────────────────────────────────────────
 
 export class UsersServiceImpl implements UsersServiceService<UsersContext> {
@@ -128,11 +137,12 @@ export class UsersServiceImpl implements UsersServiceService<UsersContext> {
   }
 
   async GetUser(input: GetUserServerInput, ctx: UsersContext): Promise<GetUserServerOutput> {
-    const user = ctx.users.get(input.userId);
+    const userId = requireString(input.userId, 'userId');
+    const user = ctx.users.get(userId);
 
     if (!user) {
       throw new UserNotFoundError({
-        message: `User '${input.userId}' not found.`,
+        message: `User '${userId}' not found.`,
       });
     }
 
@@ -148,11 +158,12 @@ export class UsersServiceImpl implements UsersServiceService<UsersContext> {
     input: GetUserStatsServerInput,
     ctx: UsersContext,
   ): Promise<GetUserStatsServerOutput> {
-    const user = ctx.users.get(input.userId);
+    const userId = requireString(input.userId, 'userId');
+    const user = ctx.users.get(userId);
 
     if (!user) {
       throw new UserNotFoundError({
-        message: `User '${input.userId}' not found.`,
+        message: `User '${userId}' not found.`,
       });
     }
 

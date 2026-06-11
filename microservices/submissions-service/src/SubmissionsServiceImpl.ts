@@ -127,16 +127,41 @@ function unauthorized(): never {
   throw { $fault: 'client', $metadata: {}, message: 'Unauthorized' } as any;
 }
 
+function requireString(value: string | undefined, fieldName: string): string {
+  if (!value) {
+    throw {
+      $fault: 'client',
+      $metadata: {},
+      message: `Missing required field '${fieldName}'`,
+    } as any;
+  }
+  return value;
+}
+
+function requireValue<T>(value: T | undefined, fieldName: string): T {
+  if (value === undefined) {
+    throw {
+      $fault: 'client',
+      $metadata: {},
+      message: `Missing required field '${fieldName}'`,
+    } as any;
+  }
+  return value;
+}
+
 export const submissionsServiceImpl: SubmissionsServiceService<{}> = {
   async RunCode(input: RunCodeServerInput): Promise<RunCodeServerOutput> {
+    const problemId = requireString(input.problemId, 'problemId');
+    const language = requireValue(input.language, 'language');
+    const sourceCode = requireString(input.sourceCode, 'sourceCode');
     const id = newId();
     db.set(id, {
       id,
-      problemId: input.problemId,
+      problemId,
       userId: 'user-anon',
-      language: input.language,
+      language,
       status: SubmissionStatus.QUEUED,
-      sourceCode: input.sourceCode,
+      sourceCode,
       isRun: true,
       createdAt: new Date().toISOString(),
     });
@@ -145,14 +170,17 @@ export const submissionsServiceImpl: SubmissionsServiceService<{}> = {
   },
 
   async Submit(input: SubmitServerInput): Promise<SubmitServerOutput> {
+    const problemId = requireString(input.problemId, 'problemId');
+    const language = requireValue(input.language, 'language');
+    const sourceCode = requireString(input.sourceCode, 'sourceCode');
     const id = newId();
     db.set(id, {
       id,
-      problemId: input.problemId,
+      problemId,
       userId: 'user-001',
-      language: input.language,
+      language,
       status: SubmissionStatus.QUEUED,
-      sourceCode: input.sourceCode,
+      sourceCode,
       isRun: false,
       createdAt: new Date().toISOString(),
     });
@@ -161,8 +189,9 @@ export const submissionsServiceImpl: SubmissionsServiceService<{}> = {
   },
 
   async GetSubmission(input: GetSubmissionServerInput): Promise<GetSubmissionServerOutput> {
-    const rec = db.get(input.submissionId);
-    if (!rec) notFound(`Submission '${input.submissionId}' not found`);
+    const submissionId = requireString(input.submissionId, 'submissionId');
+    const rec = db.get(submissionId);
+    if (!rec) notFound(`Submission '${submissionId}' not found`);
     return {
       id: rec.id,
       problemId: rec.problemId,
@@ -209,8 +238,9 @@ export const submissionsServiceImpl: SubmissionsServiceService<{}> = {
   async GetSubmissionCode(
     input: GetSubmissionCodeServerInput,
   ): Promise<GetSubmissionCodeServerOutput> {
-    const rec = db.get(input.submissionId);
-    if (!rec) notFound(`Submission '${input.submissionId}' not found`);
+    const submissionId = requireString(input.submissionId, 'submissionId');
+    const rec = db.get(submissionId);
+    if (!rec) notFound(`Submission '${submissionId}' not found`);
     return { sourceCode: rec.sourceCode, language: rec.language };
   },
 };

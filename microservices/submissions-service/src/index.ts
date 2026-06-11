@@ -1,7 +1,7 @@
 import { IncomingMessage, ServerResponse, createServer } from 'http';
 import { convertRequest, writeResponse } from '@aws-smithy/server-node';
 import { getSubmissionsServiceServiceHandler } from '@com.leetcode/submissions-api-server';
-import { submissionsServiceImpl } from './SubmissionsServiceImpl';
+import { submissionsServiceImpl } from './SubmissionsServiceImpl.js';
 
 const serviceHandler = getSubmissionsServiceServiceHandler(submissionsServiceImpl);
 
