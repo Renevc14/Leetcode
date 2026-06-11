@@ -21,10 +21,6 @@ build/
 out/
 *.tsbuildinfo
 
-# Smithy generated SSDK symlink (apunta a build/, se regenera con gradlew build)
-ssdk/
-.gradle/
-
 # Entornos (nunca commitear .env con valores reales)
 .env
 .env.local
