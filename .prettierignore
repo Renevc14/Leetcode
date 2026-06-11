@@ -1,5 +1,7 @@
 node_modules/
-infra/cdk.out/
-infra/node_modules/
-infra/package-lock.json
-package-lock.json
+**/dist/
+packages/
+databases/
+smithy/
+*.tsbuildinfo
+pnpm-lock.yaml

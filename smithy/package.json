@@ -1,0 +1,9 @@
+{
+  "name": "@leetcode/smithy",
+  "version": "0.1.0",
+  "private": true,
+  "scripts": {
+    "smithy:validate": "smithy validate",
+    "smithy:build": "smithy build"
+  }
+}

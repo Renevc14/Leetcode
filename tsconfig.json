@@ -1,0 +1,17 @@
+{
+  "files": [],
+  "references": [
+    {
+      "path": "./microservices/contests-service"
+    },
+    {
+      "path": "./microservices/problems-service"
+    },
+    {
+      "path": "./microservices/submissions-service"
+    },
+    {
+      "path": "./microservices/users-service"
+    }
+  ]
+}
