@@ -2,6 +2,7 @@
   "name": "@leetcode/submissions-service",
   "version": "0.0.1",
   "description": "Submissions microservice server.",
+  "type": "module",
   "main": "dist/index.js",
   "scripts": {
     "build": "tsc",
@@ -13,8 +14,7 @@
   "license": "ISC",
   "devDependencies": {
     "@types/node": "^20.12.13",
-    "tsx": "^4.16.2",
-    "typescript": "^5.4.5"
+    "tsx": "^4.16.2"
   },
   "dependencies": {
     "@aws-smithy/server-node": "^1.0.0-alpha.10",

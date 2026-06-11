@@ -2,6 +2,7 @@
   "name": "@leetcode/problems-service",
   "version": "0.0.1",
   "description": "Microservicio de catálogo y gestión de problemas - LeetCode Clone",
+  "type": "module",
   "main": "dist/index.js",
   "scripts": {
     "build": "tsc",
@@ -13,7 +14,6 @@
   "license": "ISC",
   "devDependencies": {
     "tsx": "^4.16.2",
-    "typescript": "^5.4.5",
     "@types/node": "^20.12.13"
   },
   "dependencies": {

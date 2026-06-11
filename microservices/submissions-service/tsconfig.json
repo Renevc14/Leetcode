@@ -1,11 +1,11 @@
 {
+  "extends": "../../tsconfig.base.json",
   "compilerOptions": {
-    "resolveJsonModule": true,
-    "incremental": true,
-    "noFallthroughCasesInSwitch": true,
-    "baseUrl": ".",
-    "outDir": "./dist"
+    "composite": true,
+    "rootDir": "./src",
+    "outDir": "./dist",
+    "tsBuildInfoFile": "./dist/.tsbuildinfo"
   },
-  "exclude": ["node_modules/", "**/*.spec.ts"],
-  "include": ["src/", "src/index.ts"]
+  "exclude": ["node_modules", "dist", "**/*.spec.ts"],
+  "include": ["src"]
 }
