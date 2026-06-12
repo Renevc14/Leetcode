@@ -12,7 +12,7 @@ export interface ProblemAggregate {
   slug: string;
   title: string;
   descriptionMd: string;
-  constrainsMd: string;
+  constraintsMd: string;
   difficulty: Difficulty;
   timeLimitMs: number;
   memoryLimitMb: number;

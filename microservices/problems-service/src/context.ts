@@ -1,6 +1,6 @@
 import type { ProblemsRepository } from './application/problems-repository.js';
-import { PrismaProblemsRepository } from './infrastructure/prisma/problems-repository.js';
-import { prisma } from './lib/prisma.js';
+import { PrismaProblemsRepository } from './persistence/prisma/problems-repository.js';
+import { prisma } from './persistence/prisma/client.js';
 
 export interface ProblemsContext {
   problemsRepository: ProblemsRepository;

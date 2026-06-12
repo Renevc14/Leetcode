@@ -6,7 +6,7 @@ import type {
 } from '@leetcode/problems-server-sdk';
 import type { ProblemAggregate } from '../domain/problem.js';
 
-const ACCEPTANCE_RATE_FALLBACK = 0;
+const ACCEPTANCE_RATE_FALLBACK = 0; // TODO: replace with a real value from a submissions aggregate
 
 export function toListProblemsOutput(
   problems: ProblemAggregate[],
@@ -31,7 +31,7 @@ export function toGetProblemOutput(problem: ProblemAggregate): GetProblemServerO
     slug: problem.slug,
     title: problem.title,
     descriptionMd: problem.descriptionMd,
-    constrainsMd: problem.constrainsMd,
+    constraintsMd: problem.constraintsMd,
     difficulty: problem.difficulty,
     timeLimitMs: problem.timeLimitMs,
     memoryLimitMb: problem.memoryLimitMb,

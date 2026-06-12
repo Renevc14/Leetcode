@@ -13,12 +13,9 @@ import {
   type UpdateProblemServerOutput,
 } from '@leetcode/problems-server-sdk';
 import type { ProblemsContext } from '../context.js';
-import {
-  mapUnexpectedError,
-  throwIfKnownServiceError,
-  ValidationException,
-} from '../domain/error-translation.js';
-import type { ListProblemsFilters } from '../application/problems-repository.js';
+import { throwIfKnownServiceError, ValidationException } from './errors.js';
+import { mapUnexpectedError } from '../persistence/prisma/error-handlers.js';
+import type { ListProblemsFilters } from './problems-repository.js';
 import type { UpdateProblemData } from '../domain/problem.js';
 import {
   ensureCategoriesProvided,
@@ -35,24 +32,32 @@ import {
   toGetProblemOutput,
   toListProblemsOutput,
   toUpdateProblemOutput,
-} from '../mappers/problem-mapper.js';
+} from './problem-mapper.js';
 
 export class ProblemsApiServiceImpl implements ProblemsApiService<ProblemsContext> {
+  constructor() {
+    this.ListProblems = this.ListProblems.bind(this);
+    this.GetProblem = this.GetProblem.bind(this);
+    this.CreateProblem = this.CreateProblem.bind(this);
+    this.UpdateProblem = this.UpdateProblem.bind(this);
+    this.DeleteProblem = this.DeleteProblem.bind(this);
+  }
+
+  private async handleErrors<T>(fn: () => Promise<T>): Promise<T> {
+    try {
+      return await fn();
+    } catch (error: unknown) {
+      throwIfKnownServiceError(error);
+      mapUnexpectedError(error);
+    }
+  }
+
   async ListProblems(
     input: ListProblemsServerInput,
     ctx: ProblemsContext,
   ): Promise<ListProblemsServerOutput> {
-    try {
+    return this.handleErrors(async () => {
       const limit = normalizeLimit(input.limit);
-
-      if (input.cursor) {
-        const cursorExists = await ctx.problemsRepository.findById(input.cursor);
-        if (!cursorExists) {
-          throw new ValidationException({
-            message: 'cursor does not reference an existing problem id.',
-          });
-        }
-      }
 
       const filters: ListProblemsFilters = {
         limit,
@@ -71,17 +76,14 @@ export class ProblemsApiServiceImpl implements ProblemsApiService<ProblemsContex
       const result = await ctx.problemsRepository.listPublished(filters);
 
       return toListProblemsOutput(result.items, result.nextCursor);
-    } catch (error: unknown) {
-      throwIfKnownServiceError(error);
-      mapUnexpectedError(error);
-    }
+    });
   }
 
   async GetProblem(
     input: GetProblemServerInput,
     ctx: ProblemsContext,
   ): Promise<GetProblemServerOutput> {
-    try {
+    return this.handleErrors(async () => {
       const problemId = requireString(input.problemId, 'problemId');
       const problem = await ctx.problemsRepository.findPublishedById(problemId);
 
@@ -92,17 +94,14 @@ export class ProblemsApiServiceImpl implements ProblemsApiService<ProblemsContex
       }
 
       return toGetProblemOutput(problem);
-    } catch (error: unknown) {
-      throwIfKnownServiceError(error);
-      mapUnexpectedError(error);
-    }
+    });
   }
 
   async CreateProblem(
     input: CreateProblemServerInput,
     ctx: ProblemsContext,
   ): Promise<CreateProblemServerOutput> {
-    try {
+    return this.handleErrors(async () => {
       const slug = requireString(input.slug, 'slug');
       const title = requireString(input.title, 'title');
       const descriptionMd = requireString(input.descriptionMd, 'descriptionMd');
@@ -131,21 +130,19 @@ export class ProblemsApiServiceImpl implements ProblemsApiService<ProblemsContex
       });
 
       return toCreateProblemOutput(created);
-    } catch (error: unknown) {
-      throwIfKnownServiceError(error);
-      mapUnexpectedError(error);
-    }
+    });
   }
 
   async UpdateProblem(
     input: UpdateProblemServerInput,
     ctx: ProblemsContext,
   ): Promise<UpdateProblemServerOutput> {
-    try {
+    return this.handleErrors(async () => {
       const problemId = requireString(input.problemId, 'problemId');
+      let categories: string[] | undefined;
 
       if (input.categories !== undefined) {
-        const categories = ensureCategoriesProvided(input.categories);
+        categories = ensureCategoriesProvided(input.categories);
         const categoriesExist = await ctx.problemsRepository.categoryNamesExist(categories);
         validateKnownCategories(categories, categoriesExist);
       }
@@ -176,8 +173,8 @@ export class ProblemsApiServiceImpl implements ProblemsApiService<ProblemsContex
       if (input.difficulty !== undefined) {
         updateData.difficulty = input.difficulty;
       }
-      if (input.categories !== undefined) {
-        updateData.categories = input.categories;
+      if (categories !== undefined) {
+        updateData.categories = categories;
       }
       if (input.timeLimitMs !== undefined) {
         updateData.timeLimitMs = input.timeLimitMs;
@@ -192,6 +189,12 @@ export class ProblemsApiServiceImpl implements ProblemsApiService<ProblemsContex
         updateData.testCases = testCases;
       }
 
+      if (Object.keys(updateData).length === 1) {
+        throw new ValidationException({
+          message: 'At least one updatable field beyond problemId must be provided.',
+        });
+      }
+
       const updated = await ctx.problemsRepository.update(updateData);
 
       if (!updated || updated.isDeleted) {
@@ -199,17 +202,14 @@ export class ProblemsApiServiceImpl implements ProblemsApiService<ProblemsContex
       }
 
       return toUpdateProblemOutput(updated);
-    } catch (error: unknown) {
-      throwIfKnownServiceError(error);
-      mapUnexpectedError(error);
-    }
+    });
   }
 
   async DeleteProblem(
     input: DeleteProblemServerInput,
     ctx: ProblemsContext,
   ): Promise<DeleteProblemServerOutput> {
-    try {
+    return this.handleErrors(async () => {
       const problemId = requireString(input.problemId, 'problemId');
       const deleted = await ctx.problemsRepository.softDelete(problemId);
 
@@ -218,10 +218,6 @@ export class ProblemsApiServiceImpl implements ProblemsApiService<ProblemsContex
       }
 
       return {};
-    } catch (error: unknown) {
-      console.log('Error in DeleteProblem:', error);
-      throwIfKnownServiceError(error);
-      mapUnexpectedError(error);
-    }
+    });
   }
 }

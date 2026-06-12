@@ -1,5 +1,5 @@
-import type { Difficulty, Language } from '@leetcode/problems-server-sdk';
-import type { PrismaClient } from '../../../generated/prisma/client.js';
+import type { Difficulty } from '@leetcode/problems-server-sdk';
+import type { Prisma, PrismaClient } from '../../../generated/prisma/client.js';
 import type {
   ProblemsRepository,
   ListProblemsFilters,
@@ -11,32 +11,9 @@ import type {
   UpdateProblemData,
 } from '../../domain/problem.js';
 
-interface ProblemRecord {
-  id: string;
-  slug: string;
-  title: string;
-  descriptionMd: string;
-  constrainsMd: string;
-  difficulty: string;
-  timeLimitMs: number;
-  memoryLimitMb: number;
-  isPublished: boolean;
-  isDeleted: boolean;
-  testCases: Array<{
-    input: string;
-    expectedOutput: string;
-    isSample: boolean;
-    orderIndex: number;
-  }>;
-  problemCategories: Array<{
-    category: {
-      name: string;
-    };
-  }>;
-  problemLanguages: Array<{
-    language: string;
-  }>;
-}
+type ProblemRecord = Prisma.ProblemGetPayload<{
+  include: typeof problemInclude;
+}>;
 
 const problemInclude = {
   testCases: {
@@ -74,20 +51,9 @@ export class PrismaProblemsRepository implements ProblemsRepository {
   }
 
   async listPublished(filters: ListProblemsFilters): Promise<ProblemListResult> {
-    const where: {
-      isDeleted: boolean;
-      isPublished: boolean;
-      difficulty?: Difficulty;
-      problemCategories?: {
-        some: {
-          category: {
-            name: string;
-          };
-        };
-      };
-    } = {
+    const where: Prisma.ProblemWhereInput = {
       isDeleted: false,
-      isPublished: true,
+      // isPublished: true,
     };
 
     if (filters.difficulty !== undefined) {
@@ -174,11 +140,11 @@ export class PrismaProblemsRepository implements ProblemsRepository {
         slug: data.slug,
         title: data.title,
         descriptionMd: data.descriptionMd,
-        constrainsMd: data.constraintsMd,
+        constraintsMd: data.constraintsMd,
         difficulty: data.difficulty,
         timeLimitMs: data.timeLimitMs,
         memoryLimitMb: data.memoryLimitMb,
-        isPublished: true,
+        isPublished: false,
         isDeleted: false,
         testCases: {
           createMany: {
@@ -210,7 +176,7 @@ export class PrismaProblemsRepository implements ProblemsRepository {
   async update(data: UpdateProblemData): Promise<ProblemAggregate | null> {
     return this.prisma.$transaction(async (tx) => {
       const current = await tx.problem.findUnique({
-        where: { id: data.id },
+        where: { id: data.id, isDeleted: false },
         select: { id: true },
       });
 
@@ -222,7 +188,7 @@ export class PrismaProblemsRepository implements ProblemsRepository {
         slug?: string;
         title?: string;
         descriptionMd?: string;
-        constrainsMd?: string;
+        constraintsMd?: string;
         difficulty?: Difficulty;
         timeLimitMs?: number;
         memoryLimitMb?: number;
@@ -238,7 +204,7 @@ export class PrismaProblemsRepository implements ProblemsRepository {
         problemUpdateData.descriptionMd = data.descriptionMd;
       }
       if (data.constraintsMd !== undefined) {
-        problemUpdateData.constrainsMd = data.constraintsMd;
+        problemUpdateData.constraintsMd = data.constraintsMd;
       }
       if (data.difficulty !== undefined) {
         problemUpdateData.difficulty = data.difficulty;
@@ -328,14 +294,12 @@ export class PrismaProblemsRepository implements ProblemsRepository {
       slug: row.slug,
       title: row.title,
       descriptionMd: row.descriptionMd,
-      constrainsMd: row.constrainsMd,
-      difficulty: row.difficulty as Difficulty,
+      constraintsMd: row.constraintsMd,
+      difficulty: row.difficulty,
       timeLimitMs: row.timeLimitMs,
       memoryLimitMb: row.memoryLimitMb,
       categories: row.problemCategories.map((problemCategory) => problemCategory.category.name),
-      allowedLanguages: row.problemLanguages.map(
-        (problemLanguage) => problemLanguage.language as Language,
-      ),
+      allowedLanguages: row.problemLanguages.map((problemLanguage) => problemLanguage.language),
       testCases: row.testCases.map((testCase) => ({
         input: testCase.input,
         expectedOutput: testCase.expectedOutput,

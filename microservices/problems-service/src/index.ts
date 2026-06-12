@@ -4,7 +4,7 @@ import { createServer } from 'http';
 import type { IncomingMessage, ServerResponse } from 'http';
 import { convertRequest, writeResponse } from '@aws-smithy/server-node';
 import { createInitialContext } from './context.js';
-import { ProblemsApiServiceImpl } from './services/ProblemsApiServiceImpl.js';
+import { ProblemsApiServiceImpl } from './application/ProblemsApiServiceImpl.js';
 
 const rawPort = process.env['PORT'];
 const PORT = rawPort ? parseInt(rawPort, 10) : 3001;
