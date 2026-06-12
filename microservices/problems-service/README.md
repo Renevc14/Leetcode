@@ -17,7 +17,7 @@ This service implements the problems catalog API using the generated `@leetcode/
 - Instantiates the Prisma-backed repository and exposes it as `ProblemsContext`.
 - Keeps infrastructure wiring separate from application logic.
 
-### `src/services/ProblemsApiServiceImpl.ts`
+### `src/application/ProblemsApiServiceImpl.ts`
 
 - Application service layer implementing the generated SDK contract.
 - Each method corresponds to a Smithy operation:
@@ -35,13 +35,19 @@ This service implements the problems catalog API using the generated `@leetcode/
 - Declares `ProblemsRepository` operations needed by the service layer.
 - Keeps the application interface independent of Prisma.
 
-### `src/infrastructure/prisma/problems-repository.ts`
+### `src/persistence/prisma/problems-repository.ts`
 
 - Prisma implementation of the repository interface.
 - Owns database query logic, transactions, and relational joins.
 - Includes only persistence concerns, not API response formatting.
 
-### `src/mappers/problem-mapper.ts`
+### `src/persistence/prisma/client.ts`
+
+- Prisma client initialization and database connection wiring.
+- Creates the `PrismaClient` instance used by the repository.
+- Isolated from application logic.
+
+### `src/application/problem-mapper.ts`
 
 - Maps domain aggregates into generated SDK response models.
 - Centralizes translation of Prisma domain objects to API output shapes.
@@ -53,21 +59,26 @@ This service implements the problems catalog API using the generated `@leetcode/
 - Enforces required fields, list normalization, and business validation rules.
 - Uses generated SDK `ValidationException` for runtime failures.
 
-### `src/domain/error-translation.ts`
+### `src/application/errors.ts`
 
-- Translates unexpected internal errors into generated SDK error types.
-- Preserves generated service errors and maps Prisma/unknown errors safely.
+- Re-exports SDK service errors.
+- Exposes `throwIfKnownServiceError` to preserve service error semantics.
+
+### `src/persistence/prisma/error-handlers.ts`
+
+- Detects Prisma error codes and maps them to SDK errors.
+- Converts unexpected persistence failures into safe service errors.
 
 ## Dependency Direction
 
 The service follows a layered direction:
 
-- `src/index.ts` → `src/context.ts` → `src/services/ProblemsApiServiceImpl.ts`
-- `src/services/ProblemsApiServiceImpl.ts` → `src/domain/validation.ts`
-- `src/services/ProblemsApiServiceImpl.ts` → `src/application/problems-repository.ts`
-- `src/services/ProblemsApiServiceImpl.ts` → `src/mappers/problem-mapper.ts`
-- `src/context.ts` → `src/infrastructure/prisma/problems-repository.ts`
-- `src/infrastructure/prisma/problems-repository.ts` → `src/lib/prisma.ts`
+- `src/index.ts` → `src/context.ts` → `src/application/ProblemsApiServiceImpl.ts`
+- `src/application/ProblemsApiServiceImpl.ts` → `src/domain/validation.ts`
+- `src/application/ProblemsApiServiceImpl.ts` → `src/application/problems-repository.ts`
+- `src/application/ProblemsApiServiceImpl.ts` → `src/application/problem-mapper.ts`
+- `src/context.ts` → `src/persistence/prisma/problems-repository.ts`
+- `src/persistence/prisma/problems-repository.ts` → `src/persistence/prisma/client.ts`
 
 This ensures the transport layer depends on the application layer, the application layer depends on the repository interface, and the infrastructure layer depends on the concrete Prisma implementation.
 
