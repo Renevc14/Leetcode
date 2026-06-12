@@ -15,7 +15,7 @@
     "problems-service-openapi": {
       "plugins": {
         "openapi": {
-          "service": "com.leetcode.problems#ProblemsService",
+          "service": "leetcode.problems#ProblemsApi",
           "protocol": "aws.protocols#restJson1",
           "version": "3.1.0"
         }
@@ -53,13 +53,13 @@
         {
           "name": "includeServices",
           "args": {
-            "services": ["com.leetcode.problems#ProblemsService"]
+            "services": ["leetcode.problems#ProblemsApi"]
           }
         }
       ],
       "plugins": {
         "typescript-server-codegen": {
-          "package": "@com.leetcode/problems-api-server",
+          "package": "@leetcode/problems-server-sdk",
           "packageVersion": "0.0.1",
           "packageManager": "pnpm",
           "packageJson": {
@@ -73,13 +73,13 @@
         {
           "name": "includeServices",
           "args": {
-            "services": ["com.leetcode.problems#ProblemsService"]
+            "services": ["leetcode.problems#ProblemsApi"]
           }
         }
       ],
       "plugins": {
         "typescript-client-codegen": {
-          "package": "@com.leetcode/problems-api-client",
+          "package": "@leetcode/problems-client-sdk",
           "packageVersion": "0.0.1",
           "packageManager": "pnpm",
           "packageJson": {

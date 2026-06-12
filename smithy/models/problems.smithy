@@ -1,53 +1,57 @@
-$version: "2.0"
+$version: "2"
 
-namespace com.leetcode.problems
+namespace leetcode.problems
 
 use aws.protocols#restJson1
+use leetcode.shared#Cursor
+use leetcode.shared#ForbiddenError
+use leetcode.shared#InternalServerError
+use leetcode.shared#NotFoundError
+use leetcode.shared#PaginatedInput
+use leetcode.shared#StringList
+use leetcode.shared#UnauthorizedError
+use smithy.api#httpBearerAuth
+use smithy.api#optionalAuth
 use smithy.framework#ValidationException
 
-/// Servicio de gestión del catálogo de problemas (RF2, RF3)
 @title("Problems Service")
+@httpBearerAuth
 @restJson1
-service ProblemsService {
-    version: "2024-01-01"
-    operations: [
-        ListProblems
-        GetProblem
-        CreateProblem
-        UpdateProblem
-        DisableProblem
+@paginated(inputToken: "cursor", outputToken: "nextCursor", pageSize: "limit")
+service ProblemsApi {
+    version: "2026-08-06"
+    resources: [
+        Problem
     ]
     errors: [
         ValidationException
     ]
 }
 
+string ProblemId
+
 // ─── ENUMS ────────────────────────────────────────────────────────────────────
 enum Difficulty {
-    EASY = "EASY"
-    MEDIUM = "MEDIUM"
-    HARD = "HARD"
+    EASY
+    MEDIUM
+    HARD
 }
 
 enum Language {
-    PYTHON = "python"
-    JAVA = "java"
-    CPP = "cpp"
-    JAVASCRIPT = "javascript"
-    TYPESCRIPT = "typescript"
+    PYTHON
+    JAVA
+    CPP
+    JAVASCRIPT
+    TYPESCRIPT
 }
 
-enum MyStatus {
-    UNSOLVED = "unsolved"
-    ATTEMPTED = "attempted"
-    SOLVED = "solved"
+enum UserProblemStatus {
+    NOT_ATTEMPTED
+    ATTEMPTED
+    SOLVED
 }
 
 // ─── LISTAS ───────────────────────────────────────────────────────────────────
-list StringList {
-    member: String
-}
-
 list LanguageList {
     member: Language
 }
@@ -56,24 +60,15 @@ list ProblemSummaryList {
     member: ProblemSummary
 }
 
-list PublicTestCaseList {
-    member: PublicTestCase
-}
-
 list TestCaseInputList {
     member: TestCaseInput
 }
 
-// ─── ESTRUCTURAS ──────────────────────────────────────────────────────────────
-/// Par entrada/salida pública (visible en el editor)
-structure PublicTestCase {
-    @required
-    input: String
-
-    @required
-    expectedOutput: String
+list TestCaseOutputList {
+    member: TestCaseOutput
 }
 
+// ─── ESTRUCTURAS ──────────────────────────────────────────────────────────────
 /// Caso de prueba enviado al crear/editar un problema
 structure TestCaseInput {
     @required
@@ -84,13 +79,63 @@ structure TestCaseInput {
 
     /// true = visible para el usuario; false = oculto (solo para evaluación)
     @required
-    isPublic: Boolean
+    isSample: Boolean
+}
+
+structure TestCaseOutput {
+    @required
+    input: String
+
+    @required
+    expectedOutput: String
+}
+
+structure ProblemDetail {
+    @required
+    id: ProblemId
+
+    @required
+    slug: String
+
+    @required
+    title: String
+
+    @required
+    descriptionMd: String
+
+    @required
+    constrainsMd: String
+
+    @required
+    difficulty: Difficulty
+
+    @required
+    timeLimitMs: Integer
+
+    @required
+    memoryLimitMb: Integer
+
+    @required
+    allowedLanguages: LanguageList
+
+    @required
+    categories: StringList
+
+    @required
+    acceptanceRate: Float
+
+    publicTestCases: TestCaseOutputList
+
+    userStatus: UserProblemStatus
 }
 
 /// Resumen para el listado del catálogo
 structure ProblemSummary {
     @required
-    id: String
+    id: ProblemId
+
+    @required
+    slug: String
 
     @required
     title: String
@@ -106,15 +151,27 @@ structure ProblemSummary {
     acceptanceRate: Float
 
     /// Solo presente cuando el request lleva token de usuario autenticado
-    myStatus: MyStatus
+    myStatus: UserProblemStatus
+}
+
+// ─── RECURSOS ───────────────────────────────────────────────────────────────
+resource Problem {
+    identifiers: {
+        problemId: ProblemId
+    }
+    read: GetProblem
+    list: ListProblems
+    create: CreateProblem
+    update: UpdateProblem
+    delete: DeleteProblem
 }
 
 // ─── OPERACIONES ──────────────────────────────────────────────────────────────
-/// RF2: Listar y filtrar el catálogo (acceso anónimo permitido)
 @readonly
-@http(method: "GET", uri: "/v1/problems")
+@optionalAuth
+@http(method: "GET", uri: "/v1/problems", code: 200)
 operation ListProblems {
-    input := {
+    input := with [PaginatedInput] {
         @httpQuery("difficulty")
         difficulty: Difficulty
 
@@ -123,13 +180,7 @@ operation ListProblems {
 
         /// Solo aplica con token de usuario; ignorado si es anónimo
         @httpQuery("status")
-        status: MyStatus
-
-        @httpQuery("page")
-        page: Integer
-
-        @httpQuery("pageSize")
-        pageSize: Integer
+        status: UserProblemStatus
     }
 
     output := {
@@ -137,78 +188,46 @@ operation ListProblems {
         items: ProblemSummaryList
 
         @required
-        total: Integer
-
-        @required
-        page: Integer
+        nextCursor: Cursor
     }
+
+    errors: [
+        InternalServerError
+    ]
 }
 
-/// RF2: Obtener detalle de un problema — nunca devuelve casos ocultos
 @readonly
-@http(method: "GET", uri: "/v1/problems/{problemId}")
+@optionalAuth
+@http(method: "GET", uri: "/v1/problems/{problemId}", code: 200)
 operation GetProblem {
     input := {
         @required
         @httpLabel
-        problemId: String
+        problemId: ProblemId
     }
 
-    output := {
-        @required
-        id: String
-
-        @required
-        title: String
-
-        @required
-        difficulty: Difficulty
-
-        @required
-        categories: StringList
-
-        @required
-        acceptanceRate: Float
-
-        myStatus: MyStatus
-
-        @required
-        statementMarkdown: String
-
-        @required
-        constraints: String
-
-        @required
-        timeLimitMs: Integer
-
-        @required
-        memoryLimitMb: Integer
-
-        @required
-        allowedLanguages: LanguageList
-
-        /// Solo casos públicos — los ocultos nunca se exponen vía API
-        @required
-        publicTestCases: PublicTestCaseList
-    }
+    output: ProblemDetail
 
     errors: [
-        ProblemNotFoundError
+        NotFoundError
+        InternalServerError
     ]
 }
 
-/// RF3: Crear problema — requiere scope problems:write (SETTER, ADMIN)
 @http(method: "POST", uri: "/v1/problems", code: 201)
 operation CreateProblem {
     input := {
         @required
+        slug: String
+
+        @required
         title: String
 
         @required
-        statementMarkdown: String
+        descriptionMd: String
 
         @required
-        constraints: String
+        constraintsMd: String
 
         @required
         difficulty: Difficulty
@@ -225,38 +244,38 @@ operation CreateProblem {
         memoryLimitMb: Integer
 
         @required
-        allowedLanguages: StringList
+        allowedLanguages: LanguageList
 
         /// Debe incluir al menos un caso público y uno oculto
         @required
         testCases: TestCaseInputList
     }
 
-    output := {
-        @required
-        id: String
-    }
+    output: ProblemDetail
 
     errors: [
-        ForbiddenError
+        ValidationException
         UnauthorizedError
+        ForbiddenError
+        InternalServerError
     ]
 }
 
-/// RF3: Editar problema existente — requiere scope problems:write
 @idempotent
-@http(method: "PUT", uri: "/v1/problems/{problemId}")
+@http(method: "PATCH", uri: "/v1/problems/{problemId}", code: 200)
 operation UpdateProblem {
     input := {
         @required
         @httpLabel
-        problemId: String
+        problemId: ProblemId
+
+        slug: String
 
         title: String
 
-        statementMarkdown: String
+        descriptionMd: String
 
-        constraints: String
+        constraintsMd: String
 
         difficulty: Difficulty
 
@@ -266,63 +285,37 @@ operation UpdateProblem {
 
         memoryLimitMb: Integer
 
-        allowedLanguages: StringList
+        allowedLanguages: LanguageList
 
         testCases: TestCaseInputList
     }
 
-    output := {
-        @required
-        id: String
-    }
+    output: ProblemDetail
 
     errors: [
-        ProblemNotFoundError
-        ForbiddenError
+        ValidationException
+        NotFoundError
         UnauthorizedError
+        ForbiddenError
+        InternalServerError
     ]
 }
 
-/// RF3: Deshabilitar problema (soft delete) — requiere scope problems:write
 @idempotent
-@http(method: "PATCH", uri: "/v1/problems/{problemId}/disable")
-operation DisableProblem {
+@http(method: "DELETE", uri: "/v1/problems/{problemId}", code: 204)
+operation DeleteProblem {
     input := {
         @required
         @httpLabel
-        problemId: String
+        problemId: ProblemId
     }
 
-    output := {
-        @required
-        message: String
-    }
+    output: Unit
 
     errors: [
-        ProblemNotFoundError
-        ForbiddenError
+        NotFoundError
         UnauthorizedError
+        ForbiddenError
+        InternalServerError
     ]
-}
-
-// ─── ERRORES ──────────────────────────────────────────────────────────────────
-@error("client")
-@httpError(404)
-structure ProblemNotFoundError {
-    @required
-    message: String
-}
-
-@error("client")
-@httpError(401)
-structure UnauthorizedError {
-    @required
-    message: String
-}
-
-@error("client")
-@httpError(403)
-structure ForbiddenError {
-    @required
-    message: String
 }
