@@ -85,15 +85,16 @@ export class ProblemsApiServiceImpl implements ProblemsApiService<ProblemsContex
   ): Promise<GetProblemServerOutput> {
     return this.handleErrors(async () => {
       const problemId = requireString(input.problemId, 'problemId');
-      const problem = await ctx.problemsRepository.findPublishedById(problemId);
+      const includeAllTestCases = input.allTestCases === true;
+      const problem = await ctx.problemsRepository.findById(problemId);
 
       if (!problem) {
         throw new NotFoundError({
-          message: `Problem '${problemId}' does not exist or is disabled.`,
+          message: `Problem '${problemId}' does not exist.`,
         });
       }
 
-      return toGetProblemOutput(problem);
+      return toGetProblemOutput(problem, includeAllTestCases);
     });
   }
 

@@ -25,7 +25,14 @@ export function toListProblemsOutput(
   };
 }
 
-export function toGetProblemOutput(problem: ProblemAggregate): GetProblemServerOutput {
+export function toGetProblemOutput(
+  problem: ProblemAggregate,
+  includeAllTestCases = false,
+): GetProblemServerOutput {
+  const testCases = includeAllTestCases
+    ? problem.testCases
+    : problem.testCases.filter((testCase) => testCase.isSample);
+
   return {
     id: problem.id,
     slug: problem.slug,
@@ -38,9 +45,11 @@ export function toGetProblemOutput(problem: ProblemAggregate): GetProblemServerO
     allowedLanguages: problem.allowedLanguages,
     categories: problem.categories,
     acceptanceRate: ACCEPTANCE_RATE_FALLBACK,
-    publicTestCases: problem.testCases
-      .filter((testCase) => testCase.isSample)
-      .map((testCase) => ({ input: testCase.input, expectedOutput: testCase.expectedOutput })),
+    testCases: testCases.map((testCase) => ({
+      input: testCase.input,
+      expectedOutput: testCase.expectedOutput,
+      isSample: testCase.isSample,
+    })),
   };
 }
 
