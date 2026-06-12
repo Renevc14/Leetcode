@@ -13,6 +13,12 @@
   },
   "projections": {
     "problems-service-openapi": {
+      "transforms": [{
+        "name": "excludeShapesByTrait",
+        "args": {
+          "traits": ["internal"]
+        }
+      }],
       "plugins": {
         "openapi": {
           "service": "leetcode.problems#ProblemsApi",
