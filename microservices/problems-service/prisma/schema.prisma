@@ -31,7 +31,7 @@ model Problem {
   slug          String     @unique
   title         String
   descriptionMd String     @map("description_md")
-  constrainsMd  String     @map("constrains_md")
+  constraintsMd String     @map("constraints_md")
   difficulty    Difficulty
   timeLimitMs   Int        @map("time_limit_ms")
   memoryLimitMb Int        @map("memory_limit_mb")
