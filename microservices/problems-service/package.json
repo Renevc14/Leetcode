@@ -21,7 +21,7 @@
   },
   "dependencies": {
     "@aws-smithy/server-node": "^1.0.0-alpha.10",
-    "@com.leetcode/problems-api-server": "workspace:*",
+    "@leetcode/problems-server-sdk": "workspace:*",
     "@prisma/adapter-pg": "^7.8.0",
     "@prisma/client": "^7.8.0",
     "pg": "^8.21.0"
