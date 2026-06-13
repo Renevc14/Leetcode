@@ -5,13 +5,14 @@
   "description": "Sistema de autenticación y autorización para una plataforma tipo LeetCode (OIDC + RBAC).",
   "packageManager": "pnpm@11.3.0",
   "engines": {
-    "node": ">=22.0.0"
+    "node": ">=22.22.3"
   },
   "scripts": {
     "prepare": "husky",
     "smithy:build": "pnpm --filter @leetcode/smithy run smithy:build",
-    "smithy:build:sdk": "pnpm --filter '@com.leetcode/*' run build",
+    "smithy:build:sdk": "pnpm --filter '@leetcode/*-sdk' run build",
     "build": "pnpm -r run build",
+    "dev:services": "pnpm --parallel --filter './microservices/*' run dev & pnpm --filter @leetcode/submissions-service run dev:worker & wait",
     "typecheck": "tsc -b --noEmit",
     "lint": "eslint .",
     "lint:fix": "eslint . --fix"
