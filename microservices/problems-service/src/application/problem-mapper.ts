@@ -46,6 +46,7 @@ export function toGetProblemOutput(
     categories: problem.categories,
     acceptanceRate: ACCEPTANCE_RATE_FALLBACK,
     testCases: testCases.map((testCase) => ({
+      id: testCase.id,
       input: testCase.input,
       expectedOutput: testCase.expectedOutput,
       isSample: testCase.isSample,
