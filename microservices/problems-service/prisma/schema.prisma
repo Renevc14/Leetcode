@@ -1,0 +1,98 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+// Get a free hosted Postgres database in seconds: `npx create-db`
+
+generator client {
+  provider            = "prisma-client"
+  output              = "../generated/prisma"
+  importFileExtension = "js"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+enum Difficulty {
+  EASY
+  MEDIUM
+  HARD
+}
+
+enum Language {
+  CPP
+  JAVA
+  PYTHON
+  JAVASCRIPT
+  TYPESCRIPT
+}
+
+model Problem {
+  id            String     @id @default(uuid())
+  slug          String     @unique
+  title         String
+  descriptionMd String     @map("description_md")
+  constraintsMd String     @map("constraints_md")
+  difficulty    Difficulty
+  timeLimitMs   Int        @map("time_limit_ms")
+  memoryLimitMb Int        @map("memory_limit_mb")
+  isPublished   Boolean    @default(false) @map("is_published")
+  isDeleted     Boolean    @default(false) @map("is_deleted")
+  createdAt     DateTime   @default(now()) @map("created_at")
+  updatedAt     DateTime   @updatedAt @map("updated_at")
+
+  testCases         TestCase[]
+  problemCategories ProblemCategory[]
+  problemLanguages  ProblemLanguage[]
+
+  @@index([difficulty])
+  @@map("problems")
+}
+
+model TestCase {
+  id             String   @id @default(uuid())
+  problemId      String   @map("problem_id")
+  input          String
+  expectedOutput String   @map("expected_output")
+  isSample       Boolean  @default(false) @map("is_sample")
+  orderIndex     Int      @map("order_index")
+  createdAt      DateTime @default(now()) @map("created_at")
+
+  problem Problem @relation(fields: [problemId], references: [id], onDelete: Cascade)
+
+  @@index([problemId])
+  @@index([problemId, isSample])
+  @@map("test_cases")
+}
+
+model Category {
+  id   String @id @default(uuid())
+  name String @unique
+
+  problemCategories ProblemCategory[]
+
+  @@map("categories")
+}
+
+model ProblemCategory {
+  problemId  String @map("problem_id")
+  categoryId String @map("category_id")
+
+  problem  Problem  @relation(fields: [problemId], references: [id], onDelete: Cascade)
+  category Category @relation(fields: [categoryId], references: [id], onDelete: Cascade)
+
+  @@id([problemId, categoryId])
+  @@index([categoryId])
+  @@map("problem_categories")
+}
+
+model ProblemLanguage {
+  problemId String   @map("problem_id")
+  language  Language
+
+  problem Problem @relation(fields: [problemId], references: [id], onDelete: Cascade)
+
+  @@id([problemId, language])
+  @@index([language])
+  @@map("problem_languages")
+}

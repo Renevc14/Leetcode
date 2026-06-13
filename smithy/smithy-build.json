@@ -13,9 +13,15 @@
   },
   "projections": {
     "problems-service-openapi": {
+      "transforms": [{
+        "name": "excludeShapesByTrait",
+        "args": {
+          "traits": ["internal"]
+        }
+      }],
       "plugins": {
         "openapi": {
-          "service": "com.leetcode.problems#ProblemsService",
+          "service": "leetcode.problems#ProblemsApi",
           "protocol": "aws.protocols#restJson1",
           "version": "3.1.0"
         }
@@ -42,7 +48,7 @@
     "users-service-openapi": {
       "plugins": {
         "openapi": {
-          "service": "com.leetcode.users#UsersService",
+          "service": "leetcode.users#UsersApi",
           "protocol": "aws.protocols#restJson1",
           "version": "3.1.0"
         }
@@ -53,13 +59,13 @@
         {
           "name": "includeServices",
           "args": {
-            "services": ["com.leetcode.problems#ProblemsService"]
+            "services": ["leetcode.problems#ProblemsApi"]
           }
         }
       ],
       "plugins": {
         "typescript-server-codegen": {
-          "package": "@com.leetcode/problems-api-server",
+          "package": "@leetcode/problems-server-sdk",
           "packageVersion": "0.0.1",
           "packageManager": "pnpm",
           "packageJson": {
@@ -73,13 +79,13 @@
         {
           "name": "includeServices",
           "args": {
-            "services": ["com.leetcode.problems#ProblemsService"]
+            "services": ["leetcode.problems#ProblemsApi"]
           }
         }
       ],
       "plugins": {
         "typescript-client-codegen": {
-          "package": "@com.leetcode/problems-api-client",
+          "package": "@leetcode/problems-client-sdk",
           "packageVersion": "0.0.1",
           "packageManager": "pnpm",
           "packageJson": {
@@ -173,13 +179,13 @@
         {
           "name": "includeServices",
           "args": {
-            "services": ["com.leetcode.users#UsersService"]
+            "services": ["leetcode.users#UsersApi"]
           }
         }
       ],
       "plugins": {
         "typescript-server-codegen": {
-          "package": "@com.leetcode/users-api-server",
+          "package": "@leetcode/users-server-sdk",
           "packageVersion": "0.0.1",
           "packageManager": "pnpm",
           "packageJson": {
@@ -193,13 +199,13 @@
         {
           "name": "includeServices",
           "args": {
-            "services": ["com.leetcode.users#UsersService"]
+            "services": ["leetcode.users#UsersApi"]
           }
         }
       ],
       "plugins": {
         "typescript-client-codegen": {
-          "package": "@com.leetcode/users-api-client",
+          "package": "@leetcode/users-client-sdk",
           "packageVersion": "0.0.1",
           "packageManager": "pnpm",
           "packageJson": {

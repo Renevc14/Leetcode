@@ -4,6 +4,8 @@ import globals from 'globals';
 import tseslint from 'typescript-eslint';
 import { defineConfig } from 'eslint/config';
 
+const tsconfigRootDir = new URL('.', import.meta.url).pathname;
+
 export default defineConfig([
   {
     ignores: [
@@ -25,12 +27,16 @@ export default defineConfig([
     },
   },
   {
-    files: ['microservices/**/*.{ts,mts,cts}'],
+    files: [
+      'microservices/**/src/**/*.ts',
+      'microservices/**/src/**/*.mts',
+      'microservices/**/src/**/*.cts',
+    ],
     extends: [...tseslint.configs.recommendedTypeChecked, prettier],
     languageOptions: {
       parserOptions: {
         project: ['./microservices/*/tsconfig.json'],
-        tsconfigRootDir: process.cwd(),
+        tsconfigRootDir,
       },
       globals: globals.node,
     },
