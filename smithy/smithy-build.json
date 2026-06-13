@@ -213,6 +213,55 @@
           }
         }
       }
+    },
+    "executor-service-openapi": {
+      "plugins": {
+        "openapi": {
+          "service": "leetcode.executor#ExecutorApi",
+          "protocol": "aws.protocols#restJson1",
+          "version": "3.1.0"
+        }
+      }
+    },
+    "executor-api-server-sdk": {
+      "transforms": [
+        {
+          "name": "includeServices",
+          "args": {
+            "services": ["leetcode.executor#ExecutorApi"]
+          }
+        }
+      ],
+      "plugins": {
+        "typescript-server-codegen": {
+          "package": "@leetcode/executor-server-sdk",
+          "packageVersion": "0.0.1",
+          "packageManager": "pnpm",
+          "packageJson": {
+            "private": true
+          }
+        }
+      }
+    },
+    "executor-api-client-sdk": {
+      "transforms": [
+        {
+          "name": "includeServices",
+          "args": {
+            "services": ["leetcode.executor#ExecutorApi"]
+          }
+        }
+      ],
+      "plugins": {
+        "typescript-client-codegen": {
+          "package": "@leetcode/executor-client-sdk",
+          "packageVersion": "0.0.1",
+          "packageManager": "pnpm",
+          "packageJson": {
+            "private": true
+          }
+        }
+      }
     }
   }
 }
