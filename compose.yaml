@@ -32,8 +32,7 @@ services:
     ports:
       - '5434:5432'
     volumes:
-      - leetcode_submissions_data:/var/lib/postgresql/data
-      - ./databases/init-submission-service.sql:/docker-entrypoint-initdb.d/01-init-submission-service.sql:ro
+      - submissions_data:/var/lib/postgresql/data
     healthcheck:
       test:
         [
@@ -103,7 +102,7 @@ services:
 
 volumes:
   problems_data:
-  leetcode_submissions_data:
+  submissions_data:
   users_data:
   leetcode_contests_data:
   leetcode_redis_data:

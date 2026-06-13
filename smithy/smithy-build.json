@@ -39,7 +39,7 @@
     "submissions-service-openapi": {
       "plugins": {
         "openapi": {
-          "service": "com.leetcode.submissions#SubmissionsService",
+          "service": "leetcode.submissions#SubmissionsApi",
           "protocol": "aws.protocols#restJson1",
           "version": "3.1.0"
         }
@@ -139,13 +139,13 @@
         {
           "name": "includeServices",
           "args": {
-            "services": ["com.leetcode.submissions#SubmissionsService"]
+            "services": ["leetcode.submissions#SubmissionsApi"]
           }
         }
       ],
       "plugins": {
         "typescript-server-codegen": {
-          "package": "@com.leetcode/submissions-api-server",
+          "package": "@leetcode/submissions-server-sdk",
           "packageVersion": "0.0.1",
           "packageManager": "pnpm",
           "packageJson": {
@@ -159,13 +159,13 @@
         {
           "name": "includeServices",
           "args": {
-            "services": ["com.leetcode.submissions#SubmissionsService"]
+            "services": ["leetcode.submissions#SubmissionsApi"]
           }
         }
       ],
       "plugins": {
         "typescript-client-codegen": {
-          "package": "@com.leetcode/submissions-api-client",
+          "package": "@leetcode/submissions-client-sdk",
           "packageVersion": "0.0.1",
           "packageManager": "pnpm",
           "packageJson": {

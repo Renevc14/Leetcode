@@ -42,7 +42,7 @@ Sistema de autenticación y autorización para una plataforma tipo LeetCode. Usa
 Para este proyecto se necesita contar con las siguientes herramientas:
 
 - Docker
-- Node.js (>= v20)
+- Node.js (>= v22)
 - pnpm (`corepack enable && corepack prepare pnpm@11.3.0 --activate`)
 - Smithy CLI
 
@@ -52,8 +52,10 @@ Para este proyecto se necesita contar con las siguientes herramientas:
 git clone https://github.com/Renevc14/Leetcode.git
 cd Leetcode
 
-# Generar los SDKs y contratos OpenAPI con Smithy CLI
-pnpm smithy:build
+# Generar los SDKs y contratos OpenAPI con Smithy CLI por primera vez
+cd smithy
+smithy build
+cd ../
 
 # Levantar las bases de datos locales
 cp .env.example .env
