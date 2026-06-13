@@ -111,6 +111,28 @@ list TestCaseResultList {
 }
 
 // ─── ESTRUCTURAS ──────────────────────────────────────────────────────────────
+@documentation("Resultado síncrono de una ejecución contra los casos públicos del problema, sin persistencia.")
+structure RunCodeResult {
+    @documentation("Veredicto final de la ejecución síncrona.")
+    @required
+    status: SubmissionStatus
+
+    @documentation("Tiempo de ejecución total de la ejecución, en milisegundos.")
+    @range(min: 0)
+    timeMs: Integer
+
+    @documentation("Memoria total utilizada por la ejecución, en megabytes.")
+    @range(min: 0)
+    memoryMb: Integer
+
+    @documentation("Mensaje de error de compilación o ejecución, cuando aplica.")
+    @length(min: 0, max: 10000)
+    errorMessage: String
+
+    @documentation("Resultados por caso de prueba para los casos públicos evaluados.")
+    testCaseResults: TestCaseResultList
+}
+
 @documentation("Resultado de la evaluación de un envío contra un caso de prueba concreto.")
 structure TestCaseResult {
     @documentation("Identificador del caso de prueba evaluado.")
@@ -235,18 +257,31 @@ resource Submission {
 }
 
 // ─── OPERACIONES ──────────────────────────────────────────────────────────────
-@documentation("Modo \"Run\": ejecuta la solución únicamente contra los casos de prueba públicos del problema sin persistirla en el historial oficial. Útil para que el usuario valide su solución antes de enviarla.")
+@documentation("Modo \"Run\": ejecuta la solución de forma síncrona únicamente contra los casos públicos del problema, sin persistirla en la base de datos ni en el historial oficial. Devuelve el veredicto final inmediatamente, útil para validar la solución antes de hacer un Submit.")
 @examples([
     {
         title: "Ejecutar una solución contra los casos públicos"
         input: { problemId: "550e8400-e29b-41d4-a716-446655440000", language: "PYTHON", code: "print(sum(map(int, input().split())))" }
-        output: { submissionId: "7c9e6679-7425-40de-944b-e07fc1f90ae7", status: "PENDING" }
+        output: {
+            status: "ACCEPTED"
+            timeMs: 18
+            memoryMb: 12
+            testCaseResults: [
+                {
+                    testCaseId: "a1b2c3d4-e5f6-4789-8a0b-1c2d3e4f5061"
+                    status: "ACCEPTED"
+                    executionTimeMs: 18
+                    memoryUsageMb: 12
+                    actualOutput: "5"
+                }
+            ]
+        }
     }
 ])
 @requiresScope(
     scopes: ["submissions:write"]
 )
-@http(method: "POST", uri: "/v1/submissions/run", code: 202)
+@http(method: "POST", uri: "/v1/submissions/run", code: 200)
 operation RunCode {
     input := {
         @documentation("Problema contra el que se ejecuta la solución.")
@@ -262,15 +297,7 @@ operation RunCode {
         code: String
     }
 
-    output := {
-        @documentation("Identificador del envío efímero generado para esta ejecución. Permite consultar su estado mediante GetSubmission.")
-        @required
-        submissionId: SubmissionId
-
-        @documentation("Estado inicial de la ejecución; normalmente PENDING hasta que el juez termina.")
-        @required
-        status: SubmissionStatus
-    }
+    output: RunCodeResult
 
     errors: [
         ValidationException
