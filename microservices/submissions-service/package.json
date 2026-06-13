@@ -7,7 +7,9 @@
   "scripts": {
     "build": "tsc",
     "start": "node dist/src/index.js",
-    "dev": "tsx watch src/index.ts"
+    "start:worker": "node dist/src/worker.js",
+    "dev": "tsx watch src/index.ts",
+    "dev:worker": "tsx watch src/worker.ts"
   },
   "keywords": [],
   "author": "",
@@ -21,9 +23,12 @@
   },
   "dependencies": {
     "@aws-smithy/server-node": "^1.0.0-alpha.10",
+    "@leetcode/executor-client-sdk": "workspace:*",
+    "@leetcode/problems-client-sdk": "workspace:*",
     "@leetcode/submissions-server-sdk": "workspace:*",
     "@prisma/adapter-pg": "^7.8.0",
     "@prisma/client": "^7.8.0",
+    "bullmq": "^5.56.3",
     "pg": "^8.21.0"
   }
 }

@@ -5,17 +5,21 @@ import type {
   TestCaseResultItem,
 } from '../domain/submission.js';
 
-export interface CreateSubmissionInput {
+export interface CreatePendingSubmissionInput {
   userId: string;
   problemId: string;
   contestId: string | undefined;
   language: Language;
   code: string;
+}
+
+export interface UpdateVerdictInput {
+  submissionId: string;
   status: SubmissionStatus;
   timeMs: number | undefined;
   memoryMb: number | undefined;
   errorMessage: string | undefined;
-  judgedAt: Date | undefined;
+  judgedAt: Date;
   testCaseResults: TestCaseResultItem[];
 }
 
@@ -34,7 +38,8 @@ export interface ListSubmissionsResult {
 }
 
 export interface SubmissionsRepository {
-  createSubmission(input: CreateSubmissionInput): Promise<SubmissionAggregate>;
+  createPendingSubmission(input: CreatePendingSubmissionInput): Promise<SubmissionAggregate>;
+  updateVerdict(input: UpdateVerdictInput): Promise<void>;
   findById(id: string): Promise<SubmissionAggregate | null>;
   list(filter: ListSubmissionsFilter): Promise<ListSubmissionsResult>;
 }

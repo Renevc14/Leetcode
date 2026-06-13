@@ -21,6 +21,7 @@ const problemInclude = {
       orderIndex: 'asc' as const,
     },
     select: {
+      id: true,
       input: true,
       expectedOutput: true,
       isSample: true,
@@ -301,6 +302,7 @@ export class PrismaProblemsRepository implements ProblemsRepository {
       categories: row.problemCategories.map((problemCategory) => problemCategory.category.name),
       allowedLanguages: row.problemLanguages.map((problemLanguage) => problemLanguage.language),
       testCases: row.testCases.map((testCase) => ({
+        id: testCase.id,
         input: testCase.input,
         expectedOutput: testCase.expectedOutput,
         isSample: testCase.isSample,

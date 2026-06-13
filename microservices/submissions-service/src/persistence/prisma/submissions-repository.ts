@@ -5,10 +5,11 @@ import type {
   TestCaseResultItem,
 } from '../../domain/submission.js';
 import type {
-  CreateSubmissionInput,
+  CreatePendingSubmissionInput,
   ListSubmissionsFilter,
   ListSubmissionsResult,
   SubmissionsRepository,
+  UpdateVerdictInput,
 } from '../../application/submissions-repository.js';
 
 const DEFAULT_LIMIT = 20;
@@ -99,7 +100,7 @@ export class PrismaSubmissionsRepository implements SubmissionsRepository {
     this.prisma = prisma;
   }
 
-  async createSubmission(input: CreateSubmissionInput): Promise<SubmissionAggregate> {
+  async createPendingSubmission(input: CreatePendingSubmissionInput): Promise<SubmissionAggregate> {
     const submission = await this.prisma.submission.create({
       data: {
         userId: input.userId,
@@ -107,25 +108,40 @@ export class PrismaSubmissionsRepository implements SubmissionsRepository {
         contestId: input.contestId ?? null,
         language: input.language,
         code: input.code,
-        status: input.status,
-        timeMs: input.timeMs ?? null,
-        memoryMb: input.memoryMb ?? null,
-        errorMessage: input.errorMessage ?? null,
-        judgedAt: input.judgedAt ?? null,
-        testCaseResults: {
-          create: input.testCaseResults.map((result) => ({
-            testCaseId: result.testCaseId,
-            status: result.status,
-            executionTimeMs: result.executionTimeMs ?? null,
-            memoryUsageMb: result.memoryUsageMb ?? null,
-            actualOutput: result.actualOutput ?? null,
-          })),
-        },
+        status: 'PENDING',
       },
       include: { testCaseResults: true },
     });
 
     return toDomain(submission);
+  }
+
+  async updateVerdict(input: UpdateVerdictInput): Promise<void> {
+    await this.prisma.$transaction(async (tx) => {
+      await tx.submission.update({
+        where: { id: input.submissionId },
+        data: {
+          status: input.status,
+          timeMs: input.timeMs ?? null,
+          memoryMb: input.memoryMb ?? null,
+          errorMessage: input.errorMessage ?? null,
+          judgedAt: input.judgedAt,
+        },
+      });
+
+      if (input.testCaseResults.length > 0) {
+        await tx.submissionTestCaseResult.createMany({
+          data: input.testCaseResults.map((r) => ({
+            submissionId: input.submissionId,
+            testCaseId: r.testCaseId,
+            status: r.status,
+            executionTimeMs: r.executionTimeMs ?? null,
+            memoryUsageMb: r.memoryUsageMb ?? null,
+            actualOutput: r.actualOutput ?? null,
+          })),
+        });
+      }
+    });
   }
 
   async findById(id: string): Promise<SubmissionAggregate | null> {

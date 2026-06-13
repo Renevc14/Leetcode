@@ -1,0 +1,26 @@
+{
+  "name": "@leetcode/executor-service",
+  "version": "0.0.1",
+  "description": "Internal code-execution microservice: runs user code in isolated Docker containers and returns verdicts.",
+  "type": "module",
+  "main": "dist/src/index.js",
+  "scripts": {
+    "build": "tsc",
+    "start": "node dist/src/index.js",
+    "dev": "tsx watch src/index.ts"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "devDependencies": {
+    "@types/dockerode": "^3.3.38",
+    "@types/node": "^20.19.42",
+    "dotenv": "^17.4.2",
+    "tsx": "^4.22.4"
+  },
+  "dependencies": {
+    "@aws-smithy/server-node": "^1.0.0-alpha.10",
+    "@leetcode/executor-server-sdk": "workspace:*",
+    "dockerode": "^4.0.4"
+  }
+}

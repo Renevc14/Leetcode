@@ -1,4 +1,3 @@
-import { randomUUID } from 'crypto';
 import {
   type GetSubmissionServerInput,
   type GetSubmissionServerOutput,
@@ -9,7 +8,10 @@ import {
   type SubmissionsApiService,
   type SubmitServerInput,
   type SubmitServerOutput,
+  type SubmissionStatus,
 } from '@leetcode/submissions-server-sdk';
+import { GetProblemCommand, type TestCaseOutput } from '@leetcode/problems-client-sdk';
+import { ExecuteCommand, type ExecutionStatus } from '@leetcode/executor-client-sdk';
 import type { SubmissionsContext } from '../context.js';
 import {
   ForbiddenError,
@@ -18,13 +20,17 @@ import {
   UnauthorizedError,
 } from './errors.js';
 import { mapUnexpectedError } from '../persistence/prisma/error-handlers.js';
-import { judge } from './judge.js';
 import {
   toGetSubmissionOutput,
   toListSubmissionsOutput,
   toRunCodeOutput,
   toSubmitOutput,
 } from './submission-mapper.js';
+
+// Both SDKs use the same string values for Language/Status; the casts below are safe.
+function toExecutorStatus(s: ExecutionStatus): SubmissionStatus {
+  return s;
+}
 
 export class SubmissionsApiServiceImpl implements SubmissionsApiService<SubmissionsContext> {
   constructor() {
@@ -50,37 +56,69 @@ export class SubmissionsApiServiceImpl implements SubmissionsApiService<Submissi
     return ctx.currentUserId;
   }
 
-  async RunCode(_input: RunCodeServerInput, ctx: SubmissionsContext): Promise<RunCodeServerOutput> {
-    return this.handleErrors(() => {
+  async RunCode(input: RunCodeServerInput, ctx: SubmissionsContext): Promise<RunCodeServerOutput> {
+    return this.handleErrors(async () => {
       this.requireUserId(ctx);
-      // Ephemeral execution: no persistence. A real judge would run asynchronously;
-      // here we hand back a fresh id the client could poll, starting at PENDING.
-      return Promise.resolve(toRunCodeOutput(randomUUID(), 'PENDING'));
+
+      const problemId = input.problemId!;
+      const language = input.language!;
+      const code = input.code!;
+
+      const problem = await ctx.problemsClient.send(new GetProblemCommand({ problemId }));
+
+      const sampleCases = (problem.testCases ?? []).filter(
+        (tc: TestCaseOutput) => tc.isSample === true,
+      );
+
+      const result = await ctx.executorClient.send(
+        new ExecuteCommand({
+          language: language,
+          code,
+          limits: {
+            timeLimitMs: problem.timeLimitMs ?? 1000,
+            memoryLimitMb: problem.memoryLimitMb ?? 256,
+          },
+          testCases: sampleCases.map((tc: TestCaseOutput) => ({
+            testCaseId: tc.id!,
+            input: tc.input!,
+            expectedOutput: tc.expectedOutput!,
+          })),
+        }),
+      );
+
+      return toRunCodeOutput({
+        status: toExecutorStatus(result.status!),
+        timeMs: result.timeMs,
+        memoryMb: result.memoryMb,
+        errorMessage: result.errorMessage,
+        testCaseResults: (result.testCaseResults ?? []).map((r) => ({
+          testCaseId: r.testCaseId!,
+          status: toExecutorStatus(r.status!),
+          executionTimeMs: r.executionTimeMs,
+          memoryUsageMb: r.memoryUsageMb,
+          actualOutput: r.actualOutput,
+        })),
+      });
     });
   }
 
   async Submit(input: SubmitServerInput, ctx: SubmissionsContext): Promise<SubmitServerOutput> {
     return this.handleErrors(async () => {
       const userId = this.requireUserId(ctx);
-      const problemId = input.problemId!;
-      const language = input.language!;
-      const code = input.code!;
 
-      const verdict = judge(code, language, problemId);
-
-      const submission = await ctx.submissionsRepository.createSubmission({
+      const submission = await ctx.submissionsRepository.createPendingSubmission({
         userId,
-        problemId,
+        problemId: input.problemId!,
         contestId: input.contestId,
-        language,
-        code,
-        status: verdict.status,
-        timeMs: verdict.timeMs,
-        memoryMb: verdict.memoryMb,
-        errorMessage: verdict.errorMessage,
-        judgedAt: new Date(),
-        testCaseResults: verdict.testCaseResults,
+        language: input.language!,
+        code: input.code!,
       });
+
+      await ctx.judgeQueue.add(
+        'judge',
+        { submissionId: submission.id },
+        { jobId: submission.id, attempts: 3, backoff: { type: 'exponential', delay: 2000 } },
+      );
 
       return toSubmitOutput(submission);
     });

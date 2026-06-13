@@ -37,6 +37,10 @@ service ProblemsApi {
 @pattern("^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-5][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}$")
 string ProblemId
 
+@documentation("Identificador UUID único de un caso de prueba.")
+@pattern("^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-5][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}$")
+string TestCaseId
+
 // ─── ENUMS ────────────────────────────────────────────────────────────────────
 @documentation("Nivel de dificultad de un problema, usado para filtrado y presentación en el catálogo.")
 enum Difficulty {
@@ -121,6 +125,10 @@ structure TestCaseInput {
 
 @documentation("Detalles públicos de un caso de prueba devueltos para demostración.")
 structure TestCaseOutput {
+    @documentation("Identificador único del caso de prueba. Necesario para correlacionar resultados de ejecución con el caso evaluado.")
+    @required
+    id: TestCaseId
+
     @documentation("Entrada consumida por el juez para evaluar la solución.")
     @required
     @length(min: 1, max: 20000)
@@ -336,6 +344,7 @@ operation ListProblems {
             acceptanceRate: 67.5
             testCases: [
                 {
+                    id: "a1b2c3d4-e5f6-4789-8a0b-1c2d3e4f5061"
                     input: "2 3"
                     expectedOutput: "5"
                     isSample: true

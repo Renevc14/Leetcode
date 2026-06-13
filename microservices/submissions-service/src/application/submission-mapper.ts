@@ -2,10 +2,10 @@ import type {
   GetSubmissionServerOutput,
   ListSubmissionsServerOutput,
   RunCodeServerOutput,
-  SubmissionStatus,
   SubmitServerOutput,
 } from '@leetcode/submissions-server-sdk';
 import type { SubmissionAggregate } from '../domain/submission.js';
+import type { JudgeVerdict } from './judge.js';
 import type { ListSubmissionsResult } from './submissions-repository.js';
 
 export function toSubmitOutput(submission: SubmissionAggregate): SubmitServerOutput {
@@ -15,13 +15,19 @@ export function toSubmitOutput(submission: SubmissionAggregate): SubmitServerOut
   };
 }
 
-export function toRunCodeOutput(
-  submissionId: string,
-  status: SubmissionStatus,
-): RunCodeServerOutput {
+export function toRunCodeOutput(verdict: JudgeVerdict): RunCodeServerOutput {
   return {
-    submissionId,
-    status,
+    status: verdict.status,
+    timeMs: verdict.timeMs,
+    memoryMb: verdict.memoryMb,
+    errorMessage: verdict.errorMessage,
+    testCaseResults: verdict.testCaseResults.map((result) => ({
+      testCaseId: result.testCaseId,
+      status: result.status,
+      executionTimeMs: result.executionTimeMs,
+      memoryUsageMb: result.memoryUsageMb,
+      actualOutput: result.actualOutput,
+    })),
   };
 }
 

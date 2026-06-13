@@ -1,6 +1,7 @@
 import type { Difficulty, Language } from '@leetcode/problems-server-sdk';
 
 export interface ProblemTestCase {
+  id: string;
   input: string;
   expectedOutput: string;
   isSample: boolean;
