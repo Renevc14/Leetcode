@@ -4,4 +4,6 @@ packages:
   - 'smithy'
   - 'packages/*/*'
 allowBuilds:
+  '@prisma/engines': true
   esbuild: true
+  prisma: true
