@@ -1,0 +1,71 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+// Get a free hosted Postgres database in seconds: `npx create-db`
+
+generator client {
+  provider            = "prisma-client"
+  output              = "../generated/prisma"
+  importFileExtension = "js"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+enum SubmissionStatus {
+  PENDING
+  ACCEPTED
+  WRONG_ANSWER
+  TIME_LIMIT_EXCEEDED
+  MEMORY_LIMIT_EXCEEDED
+  RUNTIME_ERROR
+  COMPILATION_ERROR
+
+  @@map("submission_status")
+}
+
+enum Language {
+  CPP
+  JAVA
+  PYTHON
+  JAVASCRIPT
+  TYPESCRIPT
+}
+
+model Submission {
+  id           String           @id @default(uuid())
+  userId       String           @map("user_id")
+  problemId    String           @map("problem_id")
+  contestId    String?          @map("contest_id")
+  language     Language
+  code         String
+  status       SubmissionStatus
+  timeMs       Int?             @map("time_ms")
+  memoryMb     Int?             @map("memory_mb")
+  errorMessage String?          @map("error_message")
+  submittedAt  DateTime         @default(now()) @map("submitted_at")
+  judgedAt     DateTime?        @map("judged_at")
+
+  testCaseResults SubmissionTestCaseResult[]
+
+  @@index([userId, problemId, submittedAt(sort: Desc)])
+  @@index([contestId, problemId, userId])
+  @@index([status])
+  @@map("submissions")
+}
+
+model SubmissionTestCaseResult {
+  id              String           @id @default(uuid())
+  submissionId    String           @map("submission_id")
+  testCaseId      String           @map("test_case_id")
+  status          SubmissionStatus
+  executionTimeMs Int?             @map("execution_time_ms")
+  memoryUsageMb   Int?             @map("memory_usage_mb")
+  actualOutput    String?          @map("actual_output")
+
+  submission Submission @relation(fields: [submissionId], references: [id], onDelete: Cascade)
+
+  @@index([submissionId, testCaseId])
+  @@map("submission_test_case_results")
+}
