@@ -114,7 +114,7 @@ importers:
       '@aws-smithy/server-node':
         specifier: ^1.0.0-alpha.10
         version: 1.0.0-alpha.10
-      '@com.leetcode/contests-api-server':
+      '@leetcode/contests-server-sdk':
         specifier: workspace:*
         version: link:../../packages/contests-api-server-sdk/typescript-server-codegen
     devDependencies:
@@ -130,7 +130,7 @@ importers:
       '@aws-smithy/server-node':
         specifier: ^1.0.0-alpha.10
         version: 1.0.0-alpha.10
-      '@com.leetcode/problems-api-server':
+      '@leetcode/problems-server-sdk':
         specifier: workspace:*
         version: link:../../packages/problems-api-server-sdk/typescript-server-codegen
       '@prisma/adapter-pg':
@@ -164,7 +164,7 @@ importers:
       '@aws-smithy/server-node':
         specifier: ^1.0.0-alpha.10
         version: 1.0.0-alpha.10
-      '@com.leetcode/submissions-api-server':
+      '@leetcode/submissions-server-sdk':
         specifier: workspace:*
         version: link:../../packages/submissions-api-server-sdk/typescript-server-codegen
     devDependencies:
@@ -180,15 +180,33 @@ importers:
       '@aws-smithy/server-node':
         specifier: ^1.0.0-alpha.10
         version: 1.0.0-alpha.10
-      '@com.leetcode/users-api-server':
+      '@leetcode/users-server-sdk':
         specifier: workspace:*
         version: link:../../packages/users-api-server-sdk/typescript-server-codegen
+      '@prisma/adapter-pg':
+        specifier: ^7.8.0
+        version: 7.8.0
+      '@prisma/client':
+        specifier: ^7.8.0
+        version: 7.8.0(prisma@7.8.0(@types/react-dom@19.2.3(@types/react@19.2.17))(@types/react@19.2.17)(react-dom@19.2.7(react@19.2.7))(react@19.2.7)(typescript@6.0.3))(typescript@6.0.3)
+      pg:
+        specifier: ^8.21.0
+        version: 8.21.0
     devDependencies:
       '@types/node':
-        specifier: ^20.12.13
+        specifier: ^20.19.42
         version: 20.19.42
+      '@types/pg':
+        specifier: ^8.20.0
+        version: 8.20.0
+      dotenv:
+        specifier: ^17.4.2
+        version: 17.4.2
+      prisma:
+        specifier: ^7.8.0
+        version: 7.8.0(@types/react-dom@19.2.3(@types/react@19.2.17))(@types/react@19.2.17)(react-dom@19.2.7(react@19.2.7))(react@19.2.7)(typescript@6.0.3)
       tsx:
-        specifier: ^4.16.2
+        specifier: ^4.22.4
         version: 4.22.4
 
   packages/contests-api-client-sdk/typescript-client-codegen:

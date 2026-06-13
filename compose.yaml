@@ -55,8 +55,7 @@ services:
     ports:
       - '5435:5432'
     volumes:
-      - leetcode_users_data:/var/lib/postgresql/data
-      - ./databases/init-users-service.sql:/docker-entrypoint-initdb.d/01-init-users-service.sql:ro
+      - users_data:/var/lib/postgresql/data
     healthcheck:
       test:
         ['CMD-SHELL', 'pg_isready -U ${USERS_POSTGRES_USER:-users} -d ${USERS_POSTGRES_DB:-users}']
@@ -105,6 +104,6 @@ services:
 volumes:
   problems_data:
   leetcode_submissions_data:
-  leetcode_users_data:
+  users_data:
   leetcode_contests_data:
   leetcode_redis_data:
