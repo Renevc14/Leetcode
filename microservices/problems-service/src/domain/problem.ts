@@ -62,4 +62,5 @@ export interface UpdateProblemData {
     expectedOutput: string;
     isSample: boolean;
   }>;
+  isPublished?: boolean;
 }

@@ -11,6 +11,8 @@ export interface ListProblemsFilters {
   limit: number;
   difficulty?: Difficulty;
   category?: string;
+  problemIdIn?: string[];
+  problemIdNotIn?: string[];
 }
 
 export interface ProblemsRepository {

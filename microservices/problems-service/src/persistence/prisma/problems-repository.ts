@@ -83,6 +83,14 @@ export class PrismaProblemsRepository implements ProblemsRepository {
       };
     }
 
+    if (filters.problemIdIn !== undefined) {
+      where.id = { in: filters.problemIdIn };
+    }
+
+    if (filters.problemIdNotIn !== undefined) {
+      where.id = { notIn: filters.problemIdNotIn };
+    }
+
     const rows = await this.prisma.problem.findMany({
       where,
       orderBy: [{ createdAt: 'asc' }, { id: 'asc' }],
@@ -202,6 +210,7 @@ export class PrismaProblemsRepository implements ProblemsRepository {
         difficulty?: Difficulty;
         timeLimitMs?: number;
         memoryLimitMb?: number;
+        isPublished?: boolean;
       } = {};
 
       if (data.slug !== undefined) {
@@ -224,6 +233,9 @@ export class PrismaProblemsRepository implements ProblemsRepository {
       }
       if (data.memoryLimitMb !== undefined) {
         problemUpdateData.memoryLimitMb = data.memoryLimitMb;
+      }
+      if (data.isPublished !== undefined) {
+        problemUpdateData.isPublished = data.isPublished;
       }
 
       if (Object.keys(problemUpdateData).length > 0) {
