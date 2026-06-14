@@ -188,6 +188,9 @@ importers:
       '@leetcode/problems-server-sdk':
         specifier: workspace:*
         version: link:../../packages/problems-api-server-sdk/typescript-server-codegen
+      '@leetcode/users-client-sdk':
+        specifier: workspace:*
+        version: link:../../packages/users-api-client-sdk/typescript-client-codegen
       '@prisma/adapter-pg':
         specifier: ^7.8.0
         version: 7.8.0
@@ -228,6 +231,9 @@ importers:
       '@leetcode/submissions-server-sdk':
         specifier: workspace:*
         version: link:../../packages/submissions-api-server-sdk/typescript-server-codegen
+      '@leetcode/users-client-sdk':
+        specifier: workspace:*
+        version: link:../../packages/users-api-client-sdk/typescript-client-codegen
       '@prisma/adapter-pg':
         specifier: ^7.8.0
         version: 7.8.0
