@@ -52,10 +52,22 @@ export class PrismaProblemsRepository implements ProblemsRepository {
   }
 
   async listPublished(filters: ListProblemsFilters): Promise<ProblemListResult> {
-    const where: Prisma.ProblemWhereInput = {
-      isDeleted: false,
-      // isPublished: true,
-    };
+    return this.listWithWhere({ isDeleted: false, isPublished: true }, filters);
+  }
+
+  async listNonDeleted(filters: ListProblemsFilters): Promise<ProblemListResult> {
+    return this.listWithWhere({ isDeleted: false }, filters);
+  }
+
+  async listAll(filters: ListProblemsFilters): Promise<ProblemListResult> {
+    return this.listWithWhere({}, filters);
+  }
+
+  private async listWithWhere(
+    baseWhere: Prisma.ProblemWhereInput,
+    filters: ListProblemsFilters,
+  ): Promise<ProblemListResult> {
+    const where: Prisma.ProblemWhereInput = { ...baseWhere };
 
     if (filters.difficulty !== undefined) {
       where.difficulty = filters.difficulty;
@@ -84,10 +96,7 @@ export class PrismaProblemsRepository implements ProblemsRepository {
     const items = page.map((row) => this.toProblemAggregate(row));
     const nextCursor = hasMore ? page[page.length - 1]?.id : undefined;
 
-    return {
-      items,
-      nextCursor,
-    };
+    return { items, nextCursor };
   }
 
   async findPublishedById(id: string): Promise<ProblemAggregate | null> {

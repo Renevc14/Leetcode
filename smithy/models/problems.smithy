@@ -10,6 +10,7 @@ use leetcode.shared#NotFoundError
 use leetcode.shared#PaginatedInput
 use leetcode.shared#StringList
 use leetcode.shared#UnauthorizedError
+use leetcode.shared#requiresScope
 use smithy.api#documentation
 use smithy.api#examples
 use smithy.api#httpBearerAuth
@@ -363,7 +364,6 @@ operation GetProblem {
         @httpLabel
         problemId: ProblemId
 
-        @internal
         @httpQuery("allTestCases")
         allTestCases: Boolean
     }
@@ -419,6 +419,7 @@ operation GetProblem {
         }
     }
 ])
+@requiresScope(scopes: ["problems:write"])
 @http(method: "POST", uri: "/v1/problems", code: 201)
 operation CreateProblem {
     input := {
@@ -485,10 +486,7 @@ operation CreateProblem {
 @examples([
     {
         title: "Ampliar el límite de tiempo de ejecución"
-        input: {
-            problemId: "550e8400-e29b-41d4-a716-446655440000"
-            timeLimitMs: 2000
-        }
+        input: { problemId: "550e8400-e29b-41d4-a716-446655440000", timeLimitMs: 2000 }
         output: {
             id: "550e8400-e29b-41d4-a716-446655440000"
             slug: "dos-sumas"
@@ -535,6 +533,7 @@ operation CreateProblem {
         }
     }
 ])
+@requiresScope(scopes: ["problems:write"])
 @http(method: "PATCH", uri: "/v1/problems/{problemId}", code: 200)
 operation UpdateProblem {
     input := {
@@ -591,6 +590,7 @@ operation UpdateProblem {
         input: { problemId: "550e8400-e29b-41d4-a716-446655440002" }
     }
 ])
+@requiresScope(scopes: ["problems:write"])
 @idempotent
 @http(method: "DELETE", uri: "/v1/problems/{problemId}", code: 204)
 operation DeleteProblem {

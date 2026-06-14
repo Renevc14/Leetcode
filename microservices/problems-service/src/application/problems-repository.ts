@@ -15,6 +15,8 @@ export interface ListProblemsFilters {
 
 export interface ProblemsRepository {
   listPublished(filters: ListProblemsFilters): Promise<ProblemListResult>;
+  listNonDeleted(filters: ListProblemsFilters): Promise<ProblemListResult>;
+  listAll(filters: ListProblemsFilters): Promise<ProblemListResult>;
   findPublishedById(id: string): Promise<ProblemAggregate | null>;
   findById(id: string): Promise<ProblemAggregate | null>;
   categoryNamesExist(names: string[]): Promise<boolean>;
