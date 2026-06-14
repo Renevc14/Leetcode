@@ -9,13 +9,20 @@ import {
   type ListProblemsServerOutput,
   NotFoundError,
   type ProblemsApiService,
+  type RecordSubmissionResultServerInput,
+  type RecordSubmissionResultServerOutput,
   type UpdateProblemServerInput,
   type UpdateProblemServerOutput,
 } from '@leetcode/problems-server-sdk';
 import { GetMyProblemStatusesCommand } from '@leetcode/users-client-sdk';
 import type { ProblemsContext } from '../context.js';
 import { throwIfKnownServiceError, ValidationException } from './errors.js';
-import { requireScope, PROBLEMS_WRITE_SCOPE, PROBLEMS_ADMIN_SCOPE } from './authz.js';
+import {
+  requireScope,
+  PROBLEMS_WRITE_SCOPE,
+  PROBLEMS_ADMIN_SCOPE,
+  SUBMISSIONS_WRITE_SCOPE,
+} from './authz.js';
 import { hasScope } from '../auth/principal.js';
 import { mapUnexpectedError } from '../persistence/prisma/error-handlers.js';
 import type { ListProblemsFilters } from './problems-repository.js';
@@ -46,6 +53,7 @@ export class ProblemsApiServiceImpl implements ProblemsApiService<ProblemsContex
     this.CreateProblem = this.CreateProblem.bind(this);
     this.UpdateProblem = this.UpdateProblem.bind(this);
     this.DeleteProblem = this.DeleteProblem.bind(this);
+    this.RecordSubmissionResult = this.RecordSubmissionResult.bind(this);
   }
 
   private async handleErrors<T>(fn: () => Promise<T>): Promise<T> {
@@ -276,6 +284,18 @@ export class ProblemsApiServiceImpl implements ProblemsApiService<ProblemsContex
         throw new NotFoundError({ message: `Problem '${problemId}' not found.` });
       }
 
+      return {};
+    });
+  }
+
+  async RecordSubmissionResult(
+    input: RecordSubmissionResultServerInput,
+    ctx: ProblemsContext,
+  ): Promise<RecordSubmissionResultServerOutput> {
+    return this.handleErrors(async () => {
+      requireScope(ctx.principal, SUBMISSIONS_WRITE_SCOPE);
+      const problemId = requireString(input.problemId, 'problemId');
+      await ctx.problemsRepository.recordSubmissionResult(problemId, input.accepted ?? false);
       return {};
     });
   }
