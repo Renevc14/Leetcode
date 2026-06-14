@@ -257,4 +257,9 @@ pnpm --filter @leetcode/submissions-service exec prisma db seed
 
 # Run the service (defaults to port 3003, override with PORT)
 pnpm --filter @leetcode/submissions-service dev
+
+# Run the async judge worker
+pnpm --filter @leetcode/submissions-service dev:worker
 ```
+
+> Note: the submissions service depends on Redis and the executor/problems services. Review `microservices/submissions-service/.env.example` for `REDIS_URL`, `PROBLEMS_URL`, `EXECUTOR_URL`, and `EXECUTOR_SHARED_SECRET`.
