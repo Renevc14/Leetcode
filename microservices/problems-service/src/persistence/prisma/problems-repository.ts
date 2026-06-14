@@ -42,6 +42,12 @@ const problemInclude = {
       language: true,
     },
   },
+  problemStats: {
+    select: {
+      totalSubmissions: true,
+      totalAccepted: true,
+    },
+  },
 } as const;
 
 export class PrismaProblemsRepository implements ProblemsRepository {
@@ -310,7 +316,28 @@ export class PrismaProblemsRepository implements ProblemsRepository {
     return updated.count > 0;
   }
 
+  async recordSubmissionResult(problemId: string, accepted: boolean): Promise<void> {
+    await this.prisma.problemStats.upsert({
+      where: { problemId },
+      create: {
+        problemId,
+        totalSubmissions: 1,
+        totalAccepted: accepted ? 1 : 0,
+      },
+      update: {
+        totalSubmissions: { increment: 1 },
+        ...(accepted ? { totalAccepted: { increment: 1 } } : {}),
+      },
+    });
+  }
+
   private toProblemAggregate(row: ProblemRecord): ProblemAggregate {
+    const stats = row.problemStats;
+    const acceptanceRate =
+      stats && stats.totalSubmissions > 0
+        ? (stats.totalAccepted / stats.totalSubmissions) * 100
+        : 0;
+
     return {
       id: row.id,
       slug: row.slug,
@@ -331,6 +358,7 @@ export class PrismaProblemsRepository implements ProblemsRepository {
       })),
       isPublished: row.isPublished,
       isDeleted: row.isDeleted,
+      acceptanceRate,
     };
   }
 }
