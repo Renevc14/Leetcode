@@ -13,12 +13,8 @@ import {
 import { GetProblemCommand, type TestCaseOutput } from '@leetcode/problems-client-sdk';
 import { ExecuteCommand, type ExecutionStatus } from '@leetcode/executor-client-sdk';
 import type { SubmissionsContext } from '../context.js';
-import {
-  ForbiddenError,
-  NotFoundError,
-  throwIfKnownServiceError,
-  UnauthorizedError,
-} from './errors.js';
+import { ForbiddenError, NotFoundError, throwIfKnownServiceError } from './errors.js';
+import { requireScope, SUBMISSIONS_READ_SCOPE, SUBMISSIONS_WRITE_SCOPE } from './authz.js';
 import { mapUnexpectedError } from '../persistence/prisma/error-handlers.js';
 import {
   toGetSubmissionOutput,
@@ -49,16 +45,9 @@ export class SubmissionsApiServiceImpl implements SubmissionsApiService<Submissi
     }
   }
 
-  private requireUserId(ctx: SubmissionsContext): string {
-    if (!ctx.currentUserId) {
-      throw new UnauthorizedError({ message: 'Authentication required.' });
-    }
-    return ctx.currentUserId;
-  }
-
   async RunCode(input: RunCodeServerInput, ctx: SubmissionsContext): Promise<RunCodeServerOutput> {
     return this.handleErrors(async () => {
-      this.requireUserId(ctx);
+      requireScope(ctx.principal, SUBMISSIONS_WRITE_SCOPE);
 
       const problemId = input.problemId!;
       const language = input.language!;
@@ -70,21 +59,20 @@ export class SubmissionsApiServiceImpl implements SubmissionsApiService<Submissi
         (tc: TestCaseOutput) => tc.isSample === true,
       );
 
-      const result = await ctx.executorClient.send(
-        new ExecuteCommand({
-          language: language,
-          code,
-          limits: {
-            timeLimitMs: problem.timeLimitMs ?? 1000,
-            memoryLimitMb: problem.memoryLimitMb ?? 256,
-          },
-          testCases: sampleCases.map((tc: TestCaseOutput) => ({
-            testCaseId: tc.id!,
-            input: tc.input!,
-            expectedOutput: tc.expectedOutput!,
-          })),
-        }),
-      );
+      const cmd = new ExecuteCommand({
+        language: language,
+        code,
+        limits: {
+          timeLimitMs: problem.timeLimitMs ?? 1000,
+          memoryLimitMb: problem.memoryLimitMb ?? 256,
+        },
+        testCases: sampleCases.map((tc: TestCaseOutput) => ({
+          testCaseId: tc.id!,
+          input: tc.input!,
+          expectedOutput: tc.expectedOutput!,
+        })),
+      });
+      const result = await ctx.executorClient.send(cmd);
 
       return toRunCodeOutput({
         status: toExecutorStatus(result.status!),
@@ -104,7 +92,9 @@ export class SubmissionsApiServiceImpl implements SubmissionsApiService<Submissi
 
   async Submit(input: SubmitServerInput, ctx: SubmissionsContext): Promise<SubmitServerOutput> {
     return this.handleErrors(async () => {
-      const userId = this.requireUserId(ctx);
+      requireScope(ctx.principal, SUBMISSIONS_WRITE_SCOPE);
+      const userId = ctx.principal!.subject;
+      const token = ctx.principal!.token;
 
       const submission = await ctx.submissionsRepository.createPendingSubmission({
         userId,
@@ -116,7 +106,7 @@ export class SubmissionsApiServiceImpl implements SubmissionsApiService<Submissi
 
       await ctx.judgeQueue.add(
         'judge',
-        { submissionId: submission.id },
+        { submissionId: submission.id, token },
         { jobId: submission.id, attempts: 3, backoff: { type: 'exponential', delay: 2000 } },
       );
 
@@ -129,7 +119,8 @@ export class SubmissionsApiServiceImpl implements SubmissionsApiService<Submissi
     ctx: SubmissionsContext,
   ): Promise<GetSubmissionServerOutput> {
     return this.handleErrors(async () => {
-      const userId = this.requireUserId(ctx);
+      requireScope(ctx.principal, SUBMISSIONS_READ_SCOPE);
+      const userId = ctx.principal!.subject;
       const submissionId = input.submissionId!;
 
       const submission = await ctx.submissionsRepository.findById(submissionId);
@@ -149,7 +140,8 @@ export class SubmissionsApiServiceImpl implements SubmissionsApiService<Submissi
     ctx: SubmissionsContext,
   ): Promise<ListSubmissionsServerOutput> {
     return this.handleErrors(async () => {
-      const userId = this.requireUserId(ctx);
+      requireScope(ctx.principal, SUBMISSIONS_READ_SCOPE);
+      const userId = ctx.principal!.subject;
 
       const result = await ctx.submissionsRepository.list({
         userId,
