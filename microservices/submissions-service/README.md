@@ -262,4 +262,4 @@ pnpm --filter @leetcode/submissions-service dev
 pnpm --filter @leetcode/submissions-service dev:worker
 ```
 
-> Note: the submissions service depends on Redis and the executor/problems services. Review `microservices/submissions-service/.env.example` for `REDIS_URL`, `PROBLEMS_URL`, `EXECUTOR_URL`, and `EXECUTOR_SHARED_SECRET`.
+> Note: the submissions service depends on Redis and the executor/problems services. Review `microservices/submissions-service/.env.example` for `REDIS_URL`, `PROBLEMS_URL`, and `EXECUTOR_URL`.
