@@ -1,6 +1,10 @@
 import 'dotenv/config';
 import { Worker } from 'bullmq';
-import { GetProblemCommand, type TestCaseOutput } from '@leetcode/problems-client-sdk';
+import {
+  GetProblemCommand,
+  RecordSubmissionResultCommand,
+  type TestCaseOutput,
+} from '@leetcode/problems-client-sdk';
 import { ExecuteCommand, type ExecutionStatus } from '@leetcode/executor-client-sdk';
 import type { SubmissionStatus } from '@leetcode/submissions-server-sdk';
 import { ProblemsApiClient } from '@leetcode/problems-client-sdk';
@@ -76,7 +80,17 @@ const worker = new Worker<JudgeJobData>(
       })),
     });
 
-    const problemStatus = result.status === 'ACCEPTED' ? 'SOLVED' : 'ATTEMPTED';
+    const accepted = result.status === 'ACCEPTED';
+    await problemsClient
+      .send(new RecordSubmissionResultCommand({ problemId: submission.problemId, accepted }))
+      .catch((err: unknown) => {
+        console.error(
+          `[judge-worker] Failed to record submission result for submission ${submissionId}:`,
+          err,
+        );
+      });
+
+    const problemStatus = accepted ? 'SOLVED' : 'ATTEMPTED';
     const usersClient = new UsersApiClient({ endpoint: USERS_URL, token: tokenIdentity });
     console.log(tokenIdentity);
     await usersClient
