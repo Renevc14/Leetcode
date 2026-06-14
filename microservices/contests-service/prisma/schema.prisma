@@ -1,0 +1,82 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+// Get a free hosted Postgres database in seconds: `npx create-db`
+
+generator client {
+  provider            = "prisma-client"
+  output              = "../generated/prisma"
+  importFileExtension = "js"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+enum ContestStatus {
+  UPCOMING
+  ONGOING
+  FINISHED
+  CANCELED
+
+  @@map("contest_status")
+}
+
+model Contest {
+  id              String        @id @default(uuid())
+  slug            String        @unique
+  title           String
+  description     String
+  startsAt        DateTime      @map("starts_at")
+  endsAt          DateTime      @map("ends_at")
+  status          ContestStatus
+  maxParticipants Int?          @map("max_participants")
+  createdAt       DateTime      @default(now()) @map("created_at")
+  updatedAt       DateTime      @updatedAt @map("updated_at")
+
+  contestProblems    ContestProblem[]
+  contestEnrollments ContestEnrollment[]
+  contestResults     ContestResult[]
+
+  @@index([status])
+  @@index([startsAt])
+  @@index([endsAt])
+  @@map("contests")
+}
+
+model ContestProblem {
+  contestId  String @map("contest_id")
+  problemId  String @map("problem_id")
+  orderIndex Int    @map("order_index")
+
+  contest Contest @relation(fields: [contestId], references: [id], onDelete: Cascade)
+
+  @@id([contestId, problemId])
+  @@index([contestId, orderIndex])
+  @@map("contest_problems")
+}
+
+model ContestEnrollment {
+  contestId  String   @map("contest_id")
+  userId     String   @map("user_id")
+  enrolledAt DateTime @default(now()) @map("enrolled_at")
+
+  contest Contest @relation(fields: [contestId], references: [id], onDelete: Cascade)
+
+  @@id([contestId, userId])
+  @@index([userId])
+  @@map("contest_enrollments")
+}
+
+model ContestResult {
+  contestId        String   @map("contest_id")
+  userId           String   @map("user_id")
+  solvedCount      Int      @map("solved_count")
+  totalTimeMinutes Int      @map("total_time_minutes")
+  updatedAt        DateTime @updatedAt @map("updated_at")
+
+  contest Contest @relation(fields: [contestId], references: [id], onDelete: Cascade)
+
+  @@id([contestId, userId])
+  @@map("contest_results")
+}

@@ -13,6 +13,7 @@
     "smithy:build:sdk": "pnpm --filter '@leetcode/*-sdk' run build",
     "build": "pnpm -r run build",
     "dev:services": "pnpm --parallel --filter './microservices/*' run dev & pnpm --filter @leetcode/submissions-service run dev:worker & wait",
+    "dev:frontend": "pnpm --filter frontend run dev",
     "typecheck": "tsc -b --noEmit",
     "lint": "eslint .",
     "lint:fix": "eslint . --fix"
