@@ -1,0 +1,83 @@
+# Multi-stage Dockerfile parametrizado para los microservicios "estándar"
+# (problems-service, users-service, submissions-service, contests-service).
+#
+# El executor-service tiene su propio Dockerfile porque necesita un cliente
+# Docker en runtime para los sandboxes.
+#
+# Uso:
+#   docker build -f Dockerfile.service \
+#     --build-arg SERVICE=contests-service \
+#     -t leetcode/contests-service:local .
+
+ARG NODE_VERSION=22-alpine
+
+# ─── Stage 1 · Build ──────────────────────────────────────────────────────────
+FROM node:${NODE_VERSION} AS builder
+
+RUN corepack enable && corepack prepare pnpm@11.3.0 --activate
+WORKDIR /repo
+
+# Copy lockfile + workspace manifests first so Docker cache se aprovecha
+COPY pnpm-lock.yaml pnpm-workspace.yaml package.json tsconfig.base.json tsconfig.json eslint.config.mts ./
+COPY smithy/package.json ./smithy/
+COPY frontend/package.json ./frontend/
+COPY microservices/contests-service/package.json ./microservices/contests-service/
+COPY microservices/problems-service/package.json ./microservices/problems-service/
+COPY microservices/submissions-service/package.json ./microservices/submissions-service/
+COPY microservices/users-service/package.json ./microservices/users-service/
+COPY microservices/executor-service/package.json ./microservices/executor-service/
+
+# Install all workspace deps once (cached if package.json no cambió)
+RUN pnpm install --frozen-lockfile
+
+# Now copy sources
+COPY smithy ./smithy
+COPY microservices ./microservices
+
+# Build Smithy: genera modelos y SDKs cliente/servidor
+RUN pnpm --filter @leetcode/smithy run smithy:build
+RUN pnpm -r --filter '@leetcode/*-sdk' run build
+
+# Generate Prisma client del servicio target (si tiene schema)
+ARG SERVICE
+RUN if [ -f "microservices/${SERVICE}/prisma/schema.prisma" ]; then \
+      cd "microservices/${SERVICE}" && pnpm exec prisma generate; \
+    fi
+
+# Build del servicio target
+RUN pnpm --filter "@leetcode/${SERVICE}" run build
+
+# Genera un bundle deploy-friendly: solo el servicio + sus deps de runtime
+# `pnpm deploy` resuelve workspace:* y copia node_modules production-ready
+RUN pnpm --filter "@leetcode/${SERVICE}" deploy --prod /deploy
+
+# Prisma client generado fuera del deploy bundle: lo copiamos a mano si existe
+RUN if [ -d "microservices/${SERVICE}/generated" ]; then \
+      cp -r "microservices/${SERVICE}/generated" /deploy/generated; \
+    fi
+
+# ─── Stage 2 · Runtime ────────────────────────────────────────────────────────
+FROM node:${NODE_VERSION} AS runtime
+
+ARG SERVICE
+ENV NODE_ENV=production
+ENV PORT=8080
+
+WORKDIR /app
+
+# Copia solo lo necesario del deploy
+COPY --from=builder /deploy/dist ./dist
+COPY --from=builder /deploy/node_modules ./node_modules
+COPY --from=builder /deploy/package.json ./package.json
+COPY --from=builder /deploy/generated ./generated
+
+# Si el servicio tiene migrations de Prisma, las copiamos para correr en startup
+COPY --from=builder /repo/microservices/${SERVICE}/prisma ./prisma
+
+EXPOSE 8080
+
+# Healthcheck genérico sobre / (cada servicio debería responder 200 en raíz)
+HEALTHCHECK --interval=15s --timeout=3s --start-period=15s --retries=3 \
+  CMD wget --no-verbose --tries=1 --spider http://localhost:${PORT}/ || exit 1
+
+CMD ["node", "dist/src/index.js"]
