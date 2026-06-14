@@ -44,6 +44,7 @@ model Problem {
   testCases         TestCase[]
   problemCategories ProblemCategory[]
   problemLanguages  ProblemLanguage[]
+  problemStats      ProblemStats?
 
   @@index([difficulty])
   @@map("problems")
@@ -95,4 +96,15 @@ model ProblemLanguage {
   @@id([problemId, language])
   @@index([language])
   @@map("problem_languages")
+}
+
+model ProblemStats {
+  problemId        String   @id @map("problem_id")
+  totalSubmissions Int      @default(0) @map("total_submissions")
+  totalAccepted    Int      @default(0) @map("total_accepted")
+  updatedAt        DateTime @updatedAt @map("updated_at")
+
+  problem Problem @relation(fields: [problemId], references: [id], onDelete: Cascade)
+
+  @@map("problem_stats")
 }
