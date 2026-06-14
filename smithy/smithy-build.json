@@ -46,6 +46,12 @@
       }
     },
     "users-service-openapi": {
+      "transforms": [{
+        "name": "excludeShapesByTrait",
+        "args": {
+          "traits": ["internal"]
+        }
+      }],
       "plugins": {
         "openapi": {
           "service": "leetcode.users#UsersApi",
