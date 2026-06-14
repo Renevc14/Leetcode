@@ -8,6 +8,7 @@ This service implements the users API using the generated `@leetcode/users-serve
 
 - Transport layer for HTTP server startup.
 - Configures the Smithy-generated handler: `getUsersApiServiceHandler()`.
+- Converts Node HTTP requests into Smithy HTTP requests and writes the resulting response.
 - Extracts the per-request context via `createRequestContext()`.
 - Keeps request/response wiring isolated from business logic.
 
@@ -15,7 +16,7 @@ This service implements the users API using the generated `@leetcode/users-serve
 
 - Composition root for the users service runtime context.
 - Instantiates the Prisma-backed repository and exposes it as `UsersContext`.
-- Decodes the JWT Bearer token from the `Authorization` header to extract the Authentik subject (`sub`) claim as `currentAuthentikId`.
+- Extracts the JWT Bearer token from the `Authorization` header and parses the `sub` claim as the authenticated subject.
 - Keeps identity extraction and infrastructure wiring separate from application logic.
 
 ### `src/application/UsersApiServiceImpl.ts`
@@ -25,7 +26,8 @@ This service implements the users API using the generated `@leetcode/users-serve
   - `GetMe`
   - `GetUser`
   - `GetMyProblemStatuses`
-- Guards authenticated operations using `currentAuthentikId` from context.
+  - `RecordProblemStatus`
+- Guards authenticated operations using the extracted principal.
 - Coordinates repository calls, mapping, and error translation.
 
 ### `src/application/users-repository.ts`
@@ -39,6 +41,7 @@ This service implements the users API using the generated `@leetcode/users-serve
 - Prisma implementation of the repository interface.
 - Owns database query logic and domain mapping from Prisma records.
 - Includes only persistence concerns, not API response formatting.
+- Implements idempotent problem-status writes that never downgrade a solved problem.
 
 ### `src/persistence/prisma/client.ts`
 
@@ -81,7 +84,10 @@ This ensures the transport layer depends on the application layer, the applicati
 
 ## API Endpoints
 
-The service exposes the following endpoints via Smithy-generated routing. Authenticated endpoints require a `Authorization: Bearer <jwt>` header; the service extracts the `sub` claim to identify the caller.
+The service exposes the following endpoints via Smithy-generated routing.
+
+- Authenticated endpoints require an `Authorization: Bearer <jwt>` header.
+- The service parses the JWT payload and uses the `sub` claim as the authenticated subject.
 
 ### Get Me
 
@@ -105,6 +111,7 @@ Example response:
   "displayName": "Test User",
   "email": "testuser@example.com",
   "bio": "Just a test user for development.",
+  "avatarUrl": "https://example.com/avatar.jpg",
   "countryCode": "MX"
 }
 ```
@@ -113,7 +120,7 @@ Example response:
 
 - Method: `GET`
 - Path: `/v1/users/{userId}`
-- Auth: Not required
+- Auth: Optional
 
 Example:
 
@@ -129,6 +136,7 @@ Example response:
   "userName": "testuser",
   "displayName": "Test User",
   "bio": "Just a test user for development.",
+  "avatarUrl": "https://example.com/avatar.jpg",
   "countryCode": "MX"
 }
 ```
@@ -164,3 +172,28 @@ Example response:
   ]
 }
 ```
+
+### Record Problem Status
+
+- Method: `PUT`
+- Path: `/v1/users/me/problem-statuses/{problemId}`
+- Auth: Required
+
+Example:
+
+```bash
+curl "http://localhost:3004/v1/users/me/problem-statuses/dummy-problem-id-001" \
+  -X PUT \
+  -H "Authorization: Bearer <jwt>" \
+  -H "Content-Type: application/json" \
+  -d '{"status":"SOLVED"}'
+```
+
+Example response:
+
+- `204 No Content`
+
+Behavior:
+
+- `ATTEMPTED` is written only if the user has not already solved the problem.
+- `SOLVED` always persists and upgrades existing progress.
