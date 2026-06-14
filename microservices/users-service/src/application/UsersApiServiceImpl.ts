@@ -5,6 +5,8 @@ import {
   type GetMyProblemStatusesServerOutput,
   type GetUserServerInput,
   type GetUserServerOutput,
+  type RecordProblemStatusServerInput,
+  type RecordProblemStatusServerOutput,
   NotFoundError,
   UnauthorizedError,
   type UsersApiService,
@@ -20,6 +22,7 @@ export class UsersApiServiceImpl implements UsersApiService<UsersContext> {
     this.GetMe = this.GetMe.bind(this);
     this.GetUser = this.GetUser.bind(this);
     this.GetMyProblemStatuses = this.GetMyProblemStatuses.bind(this);
+    this.RecordProblemStatus = this.RecordProblemStatus.bind(this);
   }
 
   private async handleErrors<T>(fn: () => Promise<T>): Promise<T> {
@@ -71,6 +74,23 @@ export class UsersApiServiceImpl implements UsersApiService<UsersContext> {
 
       const items = await ctx.usersRepository.listProblemStatuses(user.id);
       return toGetMyProblemStatusesOutput(items);
+    });
+  }
+
+  async RecordProblemStatus(
+    input: RecordProblemStatusServerInput,
+    ctx: UsersContext,
+  ): Promise<RecordProblemStatusServerOutput> {
+    return this.handleErrors(async () => {
+      const authentikId = requireAuth(ctx.principal);
+
+      const user = await ctx.usersRepository.findById(authentikId);
+      if (!user) {
+        throw new UnauthorizedError({ message: 'Authenticated user not found.' });
+      }
+
+      await ctx.usersRepository.upsertProblemStatus(user.id, input.problemId!, input.status!);
+      return {};
     });
   }
 }

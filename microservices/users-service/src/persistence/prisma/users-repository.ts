@@ -49,4 +49,13 @@ export class PrismaUsersRepository implements UsersRepository {
       updatedAt: r.updatedAt,
     }));
   }
+
+  async upsertProblemStatus(userId: string, problemId: string, status: 'ATTEMPTED' | 'SOLVED'): Promise<void> {
+    await this.prisma.userProblem.upsert({
+      where: { userId_problemId: { userId, problemId } },
+      create: { userId, problemId, status },
+      // On SOLVED: always write. On ATTEMPTED: no-op to avoid downgrading SOLVED.
+      update: status === 'SOLVED' ? { status: 'SOLVED' } : {},
+    });
+  }
 }
