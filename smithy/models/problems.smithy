@@ -14,6 +14,7 @@ use leetcode.shared#requiresScope
 use smithy.api#documentation
 use smithy.api#examples
 use smithy.api#httpBearerAuth
+use smithy.api#internal
 use smithy.api#length
 use smithy.api#optionalAuth
 use smithy.api#pattern
@@ -246,6 +247,9 @@ resource Problem {
     create: CreateProblem
     update: UpdateProblem
     delete: DeleteProblem
+    operations: [
+        RecordSubmissionResult
+    ]
 }
 
 // ─── OPERACIONES ──────────────────────────────────────────────────────────────
@@ -617,4 +621,29 @@ operation DeleteProblem {
         ForbiddenError
         InternalServerError
     ]
+}
+
+@internal
+@requiresScope(
+    scopes: ["submissions:write"]
+)
+@http(method: "POST", uri: "/v1/problems/{problemId}/stats", code: 204)
+operation RecordSubmissionResult {
+    input: RecordSubmissionResultInput
+    output: Unit
+    errors: [
+        NotFoundError
+        UnauthorizedError
+        ForbiddenError
+        InternalServerError
+    ]
+}
+
+structure RecordSubmissionResultInput {
+    @required
+    @httpLabel
+    problemId: ProblemId
+
+    @required
+    accepted: Boolean
 }
