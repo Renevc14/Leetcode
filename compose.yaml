@@ -73,8 +73,7 @@ services:
     ports:
       - '5436:5432'
     volumes:
-      - leetcode_contests_data:/var/lib/postgresql/data
-      - ./databases/init-contests-service.sql:/docker-entrypoint-initdb.d/01-init-contests-service.sql:ro
+      - contests_data:/var/lib/postgresql/data
     healthcheck:
       test:
         [
@@ -104,5 +103,5 @@ volumes:
   problems_data:
   submissions_data:
   users_data:
-  leetcode_contests_data:
+  contests_data:
   leetcode_redis_data:
