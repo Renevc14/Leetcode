@@ -40,7 +40,7 @@ This service implements the users API using the generated `@leetcode/users-serve
 - Owns database query logic and domain mapping from Prisma records.
 - Includes only persistence concerns, not API response formatting.
 
-### `src/lib/prisma.ts`
+### `src/persistence/prisma/client.ts`
 
 - Prisma client initialization and database connection wiring.
 - Creates the `PrismaClient` instance used by the repository.
@@ -75,7 +75,7 @@ The service follows a layered direction:
 - `src/application/UsersApiServiceImpl.ts` → `src/application/users-repository.ts`
 - `src/application/UsersApiServiceImpl.ts` → `src/application/user-mapper.ts`
 - `src/context.ts` → `src/persistence/prisma/users-repository.ts`
-- `src/persistence/prisma/users-repository.ts` → `src/lib/prisma.ts`
+- `src/persistence/prisma/users-repository.ts` → `src/persistence/prisma/client.ts`
 
 This ensures the transport layer depends on the application layer, the application layer depends on the repository interface, and the infrastructure layer depends on the concrete Prisma implementation.
 

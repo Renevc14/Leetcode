@@ -5,7 +5,6 @@ This service implements the internal code execution microservice for the platfor
 ## Overview
 
 - Runs language-specific execution strategies inside Docker containers.
-- Protects endpoints behind a shared secret header: `x-executor-secret`.
 - Supports health checks on `/healthz`.
 - Limits concurrent container execution with a semaphore.
 - Uses Dockerode to create containers and execute compile/run commands.
@@ -13,10 +12,6 @@ This service implements the internal code execution microservice for the platfor
 ## Configuration
 
 The service is configured via environment variables.
-
-Required:
-
-- `EXECUTOR_SHARED_SECRET` - shared secret used for request authorization.
 
 Optional:
 
@@ -34,7 +29,6 @@ Optional:
 
 - Creates the HTTP server.
 - Exposes `/healthz` without auth.
-- Guards all other routes with `x-executor-secret`.
 - Converts incoming requests and delegates to the Smithy-generated executor handler.
 
 ### `src/context.ts`
@@ -74,7 +68,7 @@ Optional:
 
 - Method: `POST`
 - Path: `/v1/execute`
-- Header: `x-executor-secret: <secret>`
+- Header: none required
 - Body: JSON payload matching `ExecuteServerInput` from `@leetcode/executor-server-sdk`
 
 Example:
