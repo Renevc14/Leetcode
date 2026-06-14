@@ -1,0 +1,119 @@
+# Overlay para levantar también los 5 microservicios localmente como containers.
+# Sirve para smoke-testear los Dockerfiles antes de subir las imágenes a ECR.
+#
+# Uso:
+#   docker compose -f compose.yaml -f compose.services.yaml up --build
+#
+# Los puertos host (8081-8085) son para debug manual; en producción cada servicio
+# escucha en 8080 dentro de su red.
+
+services:
+  problems-service:
+    build:
+      context: .
+      dockerfile: Dockerfile.service
+      args:
+        SERVICE: problems-service
+    container_name: problems-service
+    restart: unless-stopped
+    environment:
+      PORT: 8080
+      DATABASE_URL: postgresql://${PROBLEMS_POSTGRES_USER:-problems}:${PROBLEMS_POSTGRES_PASSWORD:-problems}@problems-postgres:5432/${PROBLEMS_POSTGRES_DB:-problems}
+      REDIS_URL: redis://redis:6379
+      USERS_SERVICE_URL: http://users-service:8080
+      SUBMISSIONS_SERVICE_URL: http://submissions-service:8080
+      AUTH_JWKS_URL: ${AUTH_JWKS_URL:-}
+    ports:
+      - '8081:8080'
+    depends_on:
+      problems-postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+
+  users-service:
+    build:
+      context: .
+      dockerfile: Dockerfile.service
+      args:
+        SERVICE: users-service
+    container_name: users-service
+    restart: unless-stopped
+    environment:
+      PORT: 8080
+      DATABASE_URL: postgresql://${USERS_POSTGRES_USER:-users}:${USERS_POSTGRES_PASSWORD:-users}@users-postgres:5432/${USERS_POSTGRES_DB:-users}
+      REDIS_URL: redis://redis:6379
+      AUTH_JWKS_URL: ${AUTH_JWKS_URL:-}
+    ports:
+      - '8082:8080'
+    depends_on:
+      users-postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+
+  submissions-service:
+    build:
+      context: .
+      dockerfile: Dockerfile.service
+      args:
+        SERVICE: submissions-service
+    container_name: submissions-service
+    restart: unless-stopped
+    environment:
+      PORT: 8080
+      DATABASE_URL: postgresql://${SUBMISSIONS_POSTGRES_USER:-submissions}:${SUBMISSIONS_POSTGRES_PASSWORD:-submissions}@submissions-postgres:5432/${SUBMISSIONS_POSTGRES_DB:-submissions}
+      REDIS_URL: redis://redis:6379
+      PROBLEMS_SERVICE_URL: http://problems-service:8080
+      CONTESTS_SERVICE_URL: http://contests-service:8080
+      EXECUTOR_SERVICE_URL: http://executor-service:8080
+      AUTH_JWKS_URL: ${AUTH_JWKS_URL:-}
+    ports:
+      - '8083:8080'
+    depends_on:
+      submissions-postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      executor-service:
+        condition: service_started
+
+  contests-service:
+    build:
+      context: .
+      dockerfile: Dockerfile.service
+      args:
+        SERVICE: contests-service
+    container_name: contests-service
+    restart: unless-stopped
+    environment:
+      PORT: 8080
+      DATABASE_URL: postgresql://${CONTESTS_POSTGRES_USER:-contests}:${CONTESTS_POSTGRES_PASSWORD:-contests}@contests-postgres:5432/${CONTESTS_POSTGRES_DB:-contests}
+      REDIS_URL: redis://redis:6379
+      PROBLEMS_SERVICE_URL: http://problems-service:8080
+      USERS_SERVICE_URL: http://users-service:8080
+      AUTH_JWKS_URL: ${AUTH_JWKS_URL:-}
+    ports:
+      - '8084:8080'
+    depends_on:
+      contests-postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+
+  executor-service:
+    build:
+      context: .
+      dockerfile: microservices/executor-service/Dockerfile
+    container_name: executor-service
+    restart: unless-stopped
+    environment:
+      PORT: 8080
+      AUTH_JWKS_URL: ${AUTH_JWKS_URL:-}
+    # El executor crea containers efímeros vía Docker socket del host.
+    # Trade-off de seguridad conocido: el container tiene control del daemon Docker.
+    # Aceptable para una demo controlada de 2 h.
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+    ports:
+      - '8085:8080'
