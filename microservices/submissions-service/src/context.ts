@@ -6,66 +6,35 @@ import { Queue } from 'bullmq';
 import { prisma } from './persistence/prisma/client.js';
 import { PrismaSubmissionsRepository } from './persistence/prisma/submissions-repository.js';
 import type { SubmissionsRepository } from './application/submissions-repository.js';
+import type { AuthPrincipal } from './auth/principal.js';
+import { extractPrincipal } from './auth/principal.js';
 
 export interface SubmissionsContext {
   submissionsRepository: SubmissionsRepository;
   problemsClient: ProblemsApiClient;
   executorClient: ExecutorApiClient;
   judgeQueue: Queue;
-  currentUserId: string | null;
+  principal: AuthPrincipal | null;
 }
 
 const submissionsRepository = new PrismaSubmissionsRepository(prisma);
 
-const problemsClient = new ProblemsApiClient({
-  endpoint: process.env['PROBLEMS_URL'] ?? 'http://localhost:3001',
-});
-
-const executorClient = new ExecutorApiClient({
-  endpoint: process.env['EXECUTOR_URL'] ?? 'http://localhost:3005',
-});
-
-// Inject the shared secret into every request sent to the executor
-executorClient.middlewareStack.add(
-  (next) => async (args) => {
-    const request = args.request as { headers?: Record<string, string> };
-    request.headers ??= {};
-    request.headers['x-executor-secret'] = process.env['EXECUTOR_SHARED_SECRET'] ?? '';
-    return next(args);
-  },
-  { step: 'build', name: 'executorSharedSecret' },
-);
+const PROBLEMS_URL = process.env['PROBLEMS_URL'] ?? 'http://localhost:3001';
+const EXECUTOR_URL = process.env['EXECUTOR_URL'] ?? 'http://localhost:3005';
 
 const judgeQueue = new Queue('submissions-judge', {
   connection: { url: process.env['REDIS_URL'] ?? 'redis://localhost:6379' },
 });
 
-function extractUserId(req: IncomingMessage): string | null {
-  const authHeader = req.headers['authorization'];
-  if (!authHeader?.startsWith('Bearer ')) return null;
-
-  const token = authHeader.slice(7);
-  try {
-    const parts = token.split('.');
-    if (parts.length !== 3) return null;
-    const encodedPayload = parts[1];
-    if (!encodedPayload) return null;
-    const payload = JSON.parse(
-      Buffer.from(encodedPayload, 'base64url').toString('utf-8'),
-    ) as Record<string, unknown>;
-    const sub = payload['sub'];
-    return typeof sub === 'string' && sub.length > 0 ? sub : null;
-  } catch {
-    return null;
-  }
-}
-
 export function createRequestContext(req: IncomingMessage): SubmissionsContext {
+  const principal = extractPrincipal(req);
+  const tokenConfig = principal?.token ? { token: { token: principal.token } } : {};
+
   return {
     submissionsRepository,
-    problemsClient,
-    executorClient,
+    problemsClient: new ProblemsApiClient({ endpoint: PROBLEMS_URL, ...tokenConfig }),
+    executorClient: new ExecutorApiClient({ endpoint: EXECUTOR_URL, ...tokenConfig }),
     judgeQueue,
-    currentUserId: extractUserId(req),
+    principal,
   };
 }

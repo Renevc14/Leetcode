@@ -11,6 +11,7 @@ import {
 } from '@leetcode/users-server-sdk';
 import type { UsersContext } from '../context.js';
 import { throwIfKnownServiceError } from './errors.js';
+import { requireAuth } from './authz.js';
 import { mapUnexpectedError } from '../persistence/prisma/error-handlers.js';
 import { toGetMeOutput, toGetMyProblemStatusesOutput, toGetUserOutput } from './user-mapper.js';
 
@@ -32,11 +33,9 @@ export class UsersApiServiceImpl implements UsersApiService<UsersContext> {
 
   async GetMe(_input: GetMeServerInput, ctx: UsersContext): Promise<GetMeServerOutput> {
     return this.handleErrors(async () => {
-      if (!ctx.currentAuthentikId) {
-        throw new UnauthorizedError({ message: 'Authentication required.' });
-      }
+      const authentikId = requireAuth(ctx.principal);
 
-      const user = await ctx.usersRepository.findByAuthentikId(ctx.currentAuthentikId);
+      const user = await ctx.usersRepository.findByAuthentikId(authentikId);
       if (!user) {
         throw new UnauthorizedError({ message: 'Authenticated user not found.' });
       }
@@ -63,11 +62,9 @@ export class UsersApiServiceImpl implements UsersApiService<UsersContext> {
     ctx: UsersContext,
   ): Promise<GetMyProblemStatusesServerOutput> {
     return this.handleErrors(async () => {
-      if (!ctx.currentAuthentikId) {
-        throw new UnauthorizedError({ message: 'Authentication required.' });
-      }
+      const authentikId = requireAuth(ctx.principal);
 
-      const user = await ctx.usersRepository.findByAuthentikId(ctx.currentAuthentikId);
+      const user = await ctx.usersRepository.findByAuthentikId(authentikId);
       if (!user) {
         throw new UnauthorizedError({ message: 'Authenticated user not found.' });
       }

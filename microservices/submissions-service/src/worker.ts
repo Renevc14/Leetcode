@@ -10,24 +10,10 @@ import { PrismaSubmissionsRepository } from './persistence/prisma/submissions-re
 
 const REDIS_URL = process.env['REDIS_URL'] ?? 'redis://localhost:6379';
 const EXECUTOR_URL = process.env['EXECUTOR_URL'] ?? 'http://localhost:3005';
-const EXECUTOR_SHARED_SECRET = process.env['EXECUTOR_SHARED_SECRET'] ?? '';
 const PROBLEMS_URL = process.env['PROBLEMS_URL'] ?? 'http://localhost:3001';
 const WORKER_CONCURRENCY = parseInt(process.env['WORKER_CONCURRENCY'] ?? '4', 10);
 
 const repository = new PrismaSubmissionsRepository(prisma);
-
-const problemsClient = new ProblemsApiClient({ endpoint: PROBLEMS_URL });
-
-const executorClient = new ExecutorApiClient({ endpoint: EXECUTOR_URL });
-executorClient.middlewareStack.add(
-  (next) => async (args) => {
-    const request = args.request as { headers?: Record<string, string> };
-    request.headers ??= {};
-    request.headers['x-executor-secret'] = EXECUTOR_SHARED_SECRET;
-    return next(args);
-  },
-  { step: 'build', name: 'executorSharedSecret' },
-);
 
 function toSubmissionStatus(s: ExecutionStatus): SubmissionStatus {
   return s;
@@ -35,12 +21,17 @@ function toSubmissionStatus(s: ExecutionStatus): SubmissionStatus {
 
 interface JudgeJobData {
   submissionId: string;
+  token: string;
 }
 
 const worker = new Worker<JudgeJobData>(
   'submissions-judge',
   async (job) => {
-    const { submissionId } = job.data;
+    const { submissionId, token } = job.data;
+
+    const tokenIdentity = { token };
+    const problemsClient = new ProblemsApiClient({ endpoint: PROBLEMS_URL, token: tokenIdentity });
+    const executorClient = new ExecutorApiClient({ endpoint: EXECUTOR_URL, token: tokenIdentity });
 
     const submission = await repository.findById(submissionId);
     if (!submission) {
@@ -52,21 +43,20 @@ const worker = new Worker<JudgeJobData>(
     );
 
     const allCases = problem.testCases ?? [];
-    const result = await executorClient.send(
-      new ExecuteCommand({
-        language: submission.language,
-        code: submission.code,
-        limits: {
-          timeLimitMs: problem.timeLimitMs ?? 1000,
-          memoryLimitMb: problem.memoryLimitMb ?? 256,
-        },
-        testCases: allCases.map((tc: TestCaseOutput) => ({
-          testCaseId: tc.id!,
-          input: tc.input!,
-          expectedOutput: tc.expectedOutput!,
-        })),
-      }),
-    );
+    const cmd = new ExecuteCommand({
+      language: submission.language,
+      code: submission.code,
+      limits: {
+        timeLimitMs: problem.timeLimitMs ?? 1000,
+        memoryLimitMb: problem.memoryLimitMb ?? 256,
+      },
+      testCases: allCases.map((tc: TestCaseOutput) => ({
+        testCaseId: tc.id!,
+        input: tc.input!,
+        expectedOutput: tc.expectedOutput!,
+      })),
+    });
+    const result = await executorClient.send(cmd);
 
     await repository.updateVerdict({
       submissionId,
@@ -98,7 +88,6 @@ worker.on('failed', (job, err) => {
   const id = job?.data.submissionId ?? '(unknown)';
   console.error(`[judge-worker] Job failed for submission ${id}:`, err);
 
-  // If all retries exhausted, mark the submission as a runtime error so it doesn't hang in PENDING
   if ((job?.attemptsMade ?? 0) >= (job?.opts.attempts ?? 1)) {
     repository
       .updateVerdict({

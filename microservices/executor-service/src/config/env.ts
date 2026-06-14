@@ -1,18 +1,11 @@
 import 'dotenv/config';
 
-function required(key: string): string {
-  const value = process.env[key];
-  if (!value) throw new Error(`Missing required env var: ${key}`);
-  return value;
-}
-
 function optional(key: string, fallback: string): string {
   return process.env[key] ?? fallback;
 }
 
 export const config = {
   port: parseInt(optional('PORT', '3005'), 10),
-  sharedSecret: required('EXECUTOR_SHARED_SECRET'),
   images: {
     PYTHON: optional('EXEC_IMAGE_PYTHON', 'leetcode-exec-python:latest'),
     JAVASCRIPT: optional('EXEC_IMAGE_NODE', 'leetcode-exec-node:latest'),

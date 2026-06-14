@@ -3,7 +3,7 @@ import { getProblemsApiServiceHandler } from '@leetcode/problems-server-sdk';
 import { createServer } from 'http';
 import type { IncomingMessage, ServerResponse } from 'http';
 import { convertRequest, writeResponse } from '@aws-smithy/server-node';
-import { createInitialContext } from './context.js';
+import { createRequestContext } from './context.js';
 import { ProblemsApiServiceImpl } from './application/ProblemsApiServiceImpl.js';
 
 const rawPort = process.env['PORT'];
@@ -15,12 +15,10 @@ const service = new ProblemsApiServiceImpl();
 // Handler generado por Smithy — enruta, serializa y deserializa automáticamente
 const serviceHandler = getProblemsApiServiceHandler(service);
 
-// Contexto compartido (en producción: pool de conexiones a RDS PostgreSQL)
-const ctx = createInitialContext();
-
 const server = createServer(
   (req: IncomingMessage, res: ServerResponse<IncomingMessage> & { req: IncomingMessage }) => {
     const httpRequest = convertRequest(req);
+    const ctx = createRequestContext(req);
     void serviceHandler
       .handle(httpRequest, ctx)
       .then((httpResponse) => {

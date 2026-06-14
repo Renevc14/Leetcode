@@ -66,7 +66,7 @@ export class ExecutorApiServiceImpl implements ExecutorApiService<ExecutorContex
             testCaseId: tc.testCaseId!,
             status,
             executionTimeMs: result.timedOut ? undefined : result.wallTimeMs,
-            memoryUsageMb: undefined, // per-exec memory not available without cgroup instrumentation
+            memoryUsageMb: undefined,
             actualOutput: result.stdout.slice(0, 20000),
           });
         }

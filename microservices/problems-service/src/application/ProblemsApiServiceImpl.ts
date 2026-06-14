@@ -14,6 +14,8 @@ import {
 } from '@leetcode/problems-server-sdk';
 import type { ProblemsContext } from '../context.js';
 import { throwIfKnownServiceError, ValidationException } from './errors.js';
+import { requireScope, PROBLEMS_WRITE_SCOPE, PROBLEMS_ADMIN_SCOPE } from './authz.js';
+import { hasScope } from '../auth/principal.js';
 import { mapUnexpectedError } from '../persistence/prisma/error-handlers.js';
 import type { ListProblemsFilters } from './problems-repository.js';
 import type { UpdateProblemData } from '../domain/problem.js';
@@ -73,7 +75,14 @@ export class ProblemsApiServiceImpl implements ProblemsApiService<ProblemsContex
         filters.category = input.category;
       }
 
-      const result = await ctx.problemsRepository.listPublished(filters);
+      let result;
+      if (hasScope(ctx.principal, PROBLEMS_ADMIN_SCOPE)) {
+        result = await ctx.problemsRepository.listAll(filters);
+      } else if (hasScope(ctx.principal, PROBLEMS_WRITE_SCOPE)) {
+        result = await ctx.problemsRepository.listNonDeleted(filters);
+      } else {
+        result = await ctx.problemsRepository.listPublished(filters);
+      }
 
       return toListProblemsOutput(result.items, result.nextCursor);
     });
@@ -85,7 +94,10 @@ export class ProblemsApiServiceImpl implements ProblemsApiService<ProblemsContex
   ): Promise<GetProblemServerOutput> {
     return this.handleErrors(async () => {
       const problemId = requireString(input.problemId, 'problemId');
-      const includeAllTestCases = input.allTestCases === true;
+      const includeAllTestCases =
+        input.allTestCases === true &&
+        (hasScope(ctx.principal, PROBLEMS_WRITE_SCOPE) ||
+          hasScope(ctx.principal, 'submissions:write'));
       const problem = await ctx.problemsRepository.findById(problemId);
 
       if (!problem) {
@@ -103,6 +115,7 @@ export class ProblemsApiServiceImpl implements ProblemsApiService<ProblemsContex
     ctx: ProblemsContext,
   ): Promise<CreateProblemServerOutput> {
     return this.handleErrors(async () => {
+      requireScope(ctx.principal, PROBLEMS_WRITE_SCOPE);
       const slug = requireString(input.slug, 'slug');
       const title = requireString(input.title, 'title');
       const descriptionMd = requireString(input.descriptionMd, 'descriptionMd');
@@ -139,6 +152,7 @@ export class ProblemsApiServiceImpl implements ProblemsApiService<ProblemsContex
     ctx: ProblemsContext,
   ): Promise<UpdateProblemServerOutput> {
     return this.handleErrors(async () => {
+      requireScope(ctx.principal, PROBLEMS_WRITE_SCOPE);
       const problemId = requireString(input.problemId, 'problemId');
       let categories: string[] | undefined;
 
@@ -211,6 +225,7 @@ export class ProblemsApiServiceImpl implements ProblemsApiService<ProblemsContex
     ctx: ProblemsContext,
   ): Promise<DeleteProblemServerOutput> {
     return this.handleErrors(async () => {
+      requireScope(ctx.principal, PROBLEMS_ADMIN_SCOPE);
       const problemId = requireString(input.problemId, 'problemId');
       const deleted = await ctx.problemsRepository.softDelete(problemId);
 

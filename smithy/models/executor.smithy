@@ -3,15 +3,20 @@ $version: "2"
 namespace leetcode.executor
 
 use aws.protocols#restJson1
+use leetcode.shared#ForbiddenError
 use leetcode.shared#InternalServerError
+use leetcode.shared#requiresScope
+use leetcode.shared#UnauthorizedError
 use smithy.api#documentation
+use smithy.api#httpBearerAuth
 use smithy.api#length
 use smithy.api#range
 use smithy.framework#ValidationException
 
-@documentation("Servicio interno de ejecución de código. Recibe código fuente, límites y casos de prueba, los ejecuta en un contenedor aislado y devuelve el veredicto. Solo accesible desde otros microservicios (no expuesto en el gateway). Autenticado con EXECUTOR_SHARED_SECRET.")
+@documentation("Servicio interno de ejecución de código. Recibe código fuente, límites y casos de prueba, los ejecuta en un contenedor aislado y devuelve el veredicto. Solo accesible desde otros microservicios autenticados con JWT de usuario.")
 @title("Executor Service")
 @restJson1
+@httpBearerAuth
 service ExecutorApi {
     version: "2026-06-13"
     operations: [
@@ -132,6 +137,7 @@ structure TestCaseOutcome {
 
 // ─── OPERACIONES ──────────────────────────────────────────────────────────────
 @documentation("Ejecuta el código enviado contra los casos de prueba provistos, dentro de un contenedor aislado, y devuelve el veredicto agregado y por caso. Operación síncrona: el caller debe esperar hasta obtener la respuesta.")
+@requiresScope(scopes: ["executor:execute"])
 @http(method: "POST", uri: "/v1/execute", code: 200)
 operation Execute {
     input := {
@@ -177,5 +183,7 @@ operation Execute {
     errors: [
         ValidationException
         InternalServerError
+        UnauthorizedError
+        ForbiddenError
     ]
 }

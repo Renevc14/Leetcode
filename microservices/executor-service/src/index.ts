@@ -2,27 +2,18 @@ import { getExecutorApiServiceHandler } from '@leetcode/executor-server-sdk';
 import { createServer } from 'http';
 import type { IncomingMessage, ServerResponse } from 'http';
 import { convertRequest, writeResponse } from '@aws-smithy/server-node';
-import { config } from './config/env.js';
 import { createRequestContext } from './context.js';
 import { ExecutorApiServiceImpl } from './application/ExecutorApiServiceImpl.js';
+import { config } from './config/env.js';
 
 const service = new ExecutorApiServiceImpl();
 const serviceHandler = getExecutorApiServiceHandler(service);
 
 const server = createServer(
   (req: IncomingMessage, res: ServerResponse<IncomingMessage> & { req: IncomingMessage }) => {
-    // Health check — no auth required
     if (req.method === 'GET' && req.url === '/healthz') {
       res.writeHead(200, { 'Content-Type': 'application/json' });
       res.end(JSON.stringify({ status: 'ok' }));
-      return;
-    }
-
-    // Shared-secret guard for all other routes
-    const secret = req.headers['x-executor-secret'];
-    if (secret !== config.sharedSecret) {
-      res.writeHead(401, { 'Content-Type': 'application/json' });
-      res.end(JSON.stringify({ message: 'Unauthorized.' }));
       return;
     }
 
