@@ -38,7 +38,7 @@ export class UsersApiServiceImpl implements UsersApiService<UsersContext> {
     return this.handleErrors(async () => {
       const authentikId = requireAuth(ctx.principal);
 
-      const user = await ctx.usersRepository.findByAuthentikId(authentikId);
+      const user = await ctx.usersRepository.findById(authentikId);
       if (!user) {
         throw new UnauthorizedError({ message: 'Authenticated user not found.' });
       }
@@ -67,7 +67,7 @@ export class UsersApiServiceImpl implements UsersApiService<UsersContext> {
     return this.handleErrors(async () => {
       const authentikId = requireAuth(ctx.principal);
 
-      const user = await ctx.usersRepository.findByAuthentikId(authentikId);
+      const user = await ctx.usersRepository.findById(authentikId);
       if (!user) {
         throw new UnauthorizedError({ message: 'Authenticated user not found.' });
       }

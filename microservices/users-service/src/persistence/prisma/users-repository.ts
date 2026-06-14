@@ -7,7 +7,6 @@ function toDomain(
 ): UserAggregate {
   return {
     id: user.id,
-    authentikId: user.authentikId,
     userName: user.userName,
     displayName: user.displayName,
     email: user.email,
@@ -23,12 +22,6 @@ export class PrismaUsersRepository implements UsersRepository {
 
   constructor(prisma: PrismaClient) {
     this.prisma = prisma;
-  }
-
-  async findByAuthentikId(authentikId: string): Promise<UserAggregate | null> {
-    const user = await this.prisma.user.findUnique({ where: { authentikId } });
-    if (!user) return null;
-    return toDomain(user);
   }
 
   async findById(id: string): Promise<UserAggregate | null> {
@@ -50,7 +43,11 @@ export class PrismaUsersRepository implements UsersRepository {
     }));
   }
 
-  async upsertProblemStatus(userId: string, problemId: string, status: 'ATTEMPTED' | 'SOLVED'): Promise<void> {
+  async upsertProblemStatus(
+    userId: string,
+    problemId: string,
+    status: 'ATTEMPTED' | 'SOLVED',
+  ): Promise<void> {
     await this.prisma.userProblem.upsert({
       where: { userId_problemId: { userId, problemId } },
       create: { userId, problemId, status },
