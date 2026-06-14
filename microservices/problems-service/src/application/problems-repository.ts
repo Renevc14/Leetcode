@@ -11,6 +11,8 @@ export interface ListProblemsFilters {
   limit: number;
   difficulty?: Difficulty;
   category?: string;
+  problemIdIn?: string[];
+  problemIdNotIn?: string[];
 }
 
 export interface ProblemsRepository {
@@ -23,4 +25,5 @@ export interface ProblemsRepository {
   create(data: CreateProblemData): Promise<ProblemAggregate>;
   update(data: UpdateProblemData): Promise<ProblemAggregate | null>;
   softDelete(id: string): Promise<boolean>;
+  recordSubmissionResult(problemId: string, accepted: boolean): Promise<void>;
 }

@@ -3,6 +3,7 @@ import type { AuthPrincipal } from '../auth/principal.js';
 
 export const PROBLEMS_WRITE_SCOPE = 'problems:write';
 export const PROBLEMS_ADMIN_SCOPE = 'problems:admin';
+export const SUBMISSIONS_WRITE_SCOPE = 'submissions:write';
 
 export function requireScope(principal: AuthPrincipal | null, scope: string): void {
   if (principal === null) {

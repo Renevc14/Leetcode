@@ -1,6 +1,5 @@
 export interface UserAggregate {
   id: string;
-  authentikId: string;
   userName: string;
   displayName: string;
   email: string;

@@ -22,6 +22,7 @@ export interface ProblemAggregate {
   testCases: ProblemTestCase[];
   isPublished: boolean;
   isDeleted: boolean;
+  acceptanceRate: number;
 }
 
 export interface ProblemListResult {
@@ -62,4 +63,5 @@ export interface UpdateProblemData {
     expectedOutput: string;
     isSample: boolean;
   }>;
+  isPublished?: boolean;
 }

@@ -9,12 +9,20 @@ import {
   type ListProblemsServerOutput,
   NotFoundError,
   type ProblemsApiService,
+  type RecordSubmissionResultServerInput,
+  type RecordSubmissionResultServerOutput,
   type UpdateProblemServerInput,
   type UpdateProblemServerOutput,
 } from '@leetcode/problems-server-sdk';
+import { GetMyProblemStatusesCommand } from '@leetcode/users-client-sdk';
 import type { ProblemsContext } from '../context.js';
 import { throwIfKnownServiceError, ValidationException } from './errors.js';
-import { requireScope, PROBLEMS_WRITE_SCOPE, PROBLEMS_ADMIN_SCOPE } from './authz.js';
+import {
+  requireScope,
+  PROBLEMS_WRITE_SCOPE,
+  PROBLEMS_ADMIN_SCOPE,
+  SUBMISSIONS_WRITE_SCOPE,
+} from './authz.js';
 import { hasScope } from '../auth/principal.js';
 import { mapUnexpectedError } from '../persistence/prisma/error-handlers.js';
 import type { ListProblemsFilters } from './problems-repository.js';
@@ -36,6 +44,8 @@ import {
   toUpdateProblemOutput,
 } from './problem-mapper.js';
 
+type UserStatusMap = Map<string, 'ATTEMPTED' | 'SOLVED'>;
+
 export class ProblemsApiServiceImpl implements ProblemsApiService<ProblemsContext> {
   constructor() {
     this.ListProblems = this.ListProblems.bind(this);
@@ -43,6 +53,7 @@ export class ProblemsApiServiceImpl implements ProblemsApiService<ProblemsContex
     this.CreateProblem = this.CreateProblem.bind(this);
     this.UpdateProblem = this.UpdateProblem.bind(this);
     this.DeleteProblem = this.DeleteProblem.bind(this);
+    this.RecordSubmissionResult = this.RecordSubmissionResult.bind(this);
   }
 
   private async handleErrors<T>(fn: () => Promise<T>): Promise<T> {
@@ -51,6 +62,22 @@ export class ProblemsApiServiceImpl implements ProblemsApiService<ProblemsContex
     } catch (error: unknown) {
       throwIfKnownServiceError(error);
       mapUnexpectedError(error);
+    }
+  }
+
+  private async fetchStatusMap(ctx: ProblemsContext): Promise<UserStatusMap | undefined> {
+    if (!ctx.principal) return undefined;
+    try {
+      const result = await ctx.usersClient.send(new GetMyProblemStatusesCommand({}));
+      const map: UserStatusMap = new Map();
+      for (const item of result.items ?? []) {
+        if (item.problemId && item.status) {
+          map.set(item.problemId, item.status);
+        }
+      }
+      return map;
+    } catch {
+      return undefined;
     }
   }
 
@@ -75,6 +102,25 @@ export class ProblemsApiServiceImpl implements ProblemsApiService<ProblemsContex
         filters.category = input.category;
       }
 
+      const statusMap = await this.fetchStatusMap(ctx);
+
+      if (input.status !== undefined && statusMap !== undefined) {
+        if (input.status === 'NOT_ATTEMPTED') {
+          const knownIds = [...statusMap.keys()];
+          if (knownIds.length > 0) {
+            filters.problemIdNotIn = knownIds;
+          }
+        } else {
+          const matchingIds = [...statusMap.entries()]
+            .filter(([, s]) => s === input.status)
+            .map(([id]) => id);
+          if (matchingIds.length === 0) {
+            return toListProblemsOutput([], undefined, statusMap);
+          }
+          filters.problemIdIn = matchingIds;
+        }
+      }
+
       let result;
       if (hasScope(ctx.principal, PROBLEMS_ADMIN_SCOPE)) {
         result = await ctx.problemsRepository.listAll(filters);
@@ -84,7 +130,7 @@ export class ProblemsApiServiceImpl implements ProblemsApiService<ProblemsContex
         result = await ctx.problemsRepository.listPublished(filters);
       }
 
-      return toListProblemsOutput(result.items, result.nextCursor);
+      return toListProblemsOutput(result.items, result.nextCursor, statusMap);
     });
   }
 
@@ -106,7 +152,9 @@ export class ProblemsApiServiceImpl implements ProblemsApiService<ProblemsContex
         });
       }
 
-      return toGetProblemOutput(problem, includeAllTestCases);
+      const statusMap = await this.fetchStatusMap(ctx);
+
+      return toGetProblemOutput(problem, includeAllTestCases, statusMap);
     });
   }
 
@@ -203,6 +251,9 @@ export class ProblemsApiServiceImpl implements ProblemsApiService<ProblemsContex
       if (testCases !== undefined) {
         updateData.testCases = testCases;
       }
+      if (input.isPublished !== undefined) {
+        updateData.isPublished = input.isPublished;
+      }
 
       if (Object.keys(updateData).length === 1) {
         throw new ValidationException({
@@ -233,6 +284,18 @@ export class ProblemsApiServiceImpl implements ProblemsApiService<ProblemsContex
         throw new NotFoundError({ message: `Problem '${problemId}' not found.` });
       }
 
+      return {};
+    });
+  }
+
+  async RecordSubmissionResult(
+    input: RecordSubmissionResultServerInput,
+    ctx: ProblemsContext,
+  ): Promise<RecordSubmissionResultServerOutput> {
+    return this.handleErrors(async () => {
+      requireScope(ctx.principal, SUBMISSIONS_WRITE_SCOPE);
+      const problemId = requireString(input.problemId, 'problemId');
+      await ctx.problemsRepository.recordSubmissionResult(problemId, input.accepted ?? false);
       return {};
     });
   }

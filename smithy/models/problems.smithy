@@ -14,6 +14,7 @@ use leetcode.shared#requiresScope
 use smithy.api#documentation
 use smithy.api#examples
 use smithy.api#httpBearerAuth
+use smithy.api#internal
 use smithy.api#length
 use smithy.api#optionalAuth
 use smithy.api#pattern
@@ -246,6 +247,9 @@ resource Problem {
     create: CreateProblem
     update: UpdateProblem
     delete: DeleteProblem
+    operations: [
+        RecordSubmissionResult
+    ]
 }
 
 // ─── OPERACIONES ──────────────────────────────────────────────────────────────
@@ -419,7 +423,9 @@ operation GetProblem {
         }
     }
 ])
-@requiresScope(scopes: ["problems:write"])
+@requiresScope(
+    scopes: ["problems:write"]
+)
 @http(method: "POST", uri: "/v1/problems", code: 201)
 operation CreateProblem {
     input := {
@@ -533,7 +539,9 @@ operation CreateProblem {
         }
     }
 ])
-@requiresScope(scopes: ["problems:write"])
+@requiresScope(
+    scopes: ["problems:write"]
+)
 @http(method: "PATCH", uri: "/v1/problems/{problemId}", code: 200)
 operation UpdateProblem {
     input := {
@@ -567,6 +575,9 @@ operation UpdateProblem {
         @length(min: 1, max: 5)
         allowedLanguages: LanguageList
 
+        @documentation("Indica si el problema está publicado en el catálogo.")
+        isPublished: Boolean
+
         @documentation("Casos de prueba enviados al actualizar la definición del problema.")
         @length(min: 2, max: 100)
         testCases: TestCaseInputList
@@ -590,7 +601,9 @@ operation UpdateProblem {
         input: { problemId: "550e8400-e29b-41d4-a716-446655440002" }
     }
 ])
-@requiresScope(scopes: ["problems:write"])
+@requiresScope(
+    scopes: ["problems:write"]
+)
 @idempotent
 @http(method: "DELETE", uri: "/v1/problems/{problemId}", code: 204)
 operation DeleteProblem {
@@ -608,4 +621,29 @@ operation DeleteProblem {
         ForbiddenError
         InternalServerError
     ]
+}
+
+@internal
+@requiresScope(
+    scopes: ["submissions:write"]
+)
+@http(method: "POST", uri: "/v1/problems/{problemId}/stats", code: 204)
+operation RecordSubmissionResult {
+    input: RecordSubmissionResultInput
+    output: Unit
+    errors: [
+        NotFoundError
+        UnauthorizedError
+        ForbiddenError
+        InternalServerError
+    ]
+}
+
+structure RecordSubmissionResultInput {
+    @required
+    @httpLabel
+    problemId: ProblemId
+
+    @required
+    accepted: Boolean
 }

@@ -3,6 +3,7 @@ import type { IncomingMessage } from 'http';
 export interface AuthPrincipal {
   subject: string;
   scopes: string[];
+  token: string;
 }
 
 function parseScopes(payload: Record<string, unknown>): string[] {
@@ -32,7 +33,7 @@ export function extractPrincipal(req: IncomingMessage): AuthPrincipal | null {
     ) as Record<string, unknown>;
     const sub = payload['sub'];
     if (typeof sub !== 'string' || sub.length === 0) return null;
-    return { subject: sub, scopes: parseScopes(payload) };
+    return { subject: sub, scopes: parseScopes(payload), token };
   } catch {
     return null;
   }

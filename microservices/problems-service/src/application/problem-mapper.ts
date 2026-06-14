@@ -6,11 +6,12 @@ import type {
 } from '@leetcode/problems-server-sdk';
 import type { ProblemAggregate } from '../domain/problem.js';
 
-const ACCEPTANCE_RATE_FALLBACK = 0; // TODO: replace with a real value from a submissions aggregate
+type UserStatusMap = Map<string, 'ATTEMPTED' | 'SOLVED'>;
 
 export function toListProblemsOutput(
   problems: ProblemAggregate[],
   nextCursor: string | undefined,
+  statusMap?: UserStatusMap,
 ): ListProblemsServerOutput {
   return {
     items: problems.map((problem) => ({
@@ -19,7 +20,10 @@ export function toListProblemsOutput(
       title: problem.title,
       difficulty: problem.difficulty,
       categories: problem.categories,
-      acceptanceRate: ACCEPTANCE_RATE_FALLBACK,
+      acceptanceRate: problem.acceptanceRate,
+      ...(statusMap !== undefined
+        ? { userStatus: statusMap.get(problem.id) ?? 'NOT_ATTEMPTED' }
+        : {}),
     })),
     nextCursor,
   };
@@ -28,6 +32,7 @@ export function toListProblemsOutput(
 export function toGetProblemOutput(
   problem: ProblemAggregate,
   includeAllTestCases = false,
+  statusMap?: UserStatusMap,
 ): GetProblemServerOutput {
   const testCases = includeAllTestCases
     ? problem.testCases
@@ -44,13 +49,16 @@ export function toGetProblemOutput(
     memoryLimitMb: problem.memoryLimitMb,
     allowedLanguages: problem.allowedLanguages,
     categories: problem.categories,
-    acceptanceRate: ACCEPTANCE_RATE_FALLBACK,
+    acceptanceRate: problem.acceptanceRate,
     testCases: testCases.map((testCase) => ({
       id: testCase.id,
       input: testCase.input,
       expectedOutput: testCase.expectedOutput,
       isSample: testCase.isSample,
     })),
+    ...(statusMap !== undefined
+      ? { userStatus: statusMap.get(problem.id) ?? 'NOT_ATTEMPTED' }
+      : {}),
   };
 }
 

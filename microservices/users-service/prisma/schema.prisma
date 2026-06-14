@@ -19,8 +19,7 @@ enum UserProblemStatus {
 }
 
 model User {
-  id          String   @id @default(uuid())
-  authentikId String   @unique @map("authentik_id")
+  id          String   @id
   userName    String   @unique @map("user_name")
   displayName String   @map("display_name")
   email       String   @unique

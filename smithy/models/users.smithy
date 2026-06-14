@@ -9,6 +9,8 @@ use leetcode.shared#UnauthorizedError
 use smithy.api#documentation
 use smithy.api#examples
 use smithy.api#httpBearerAuth
+use smithy.api#idempotent
+use smithy.api#internal
 use smithy.api#length
 use smithy.api#optionalAuth
 use smithy.api#pattern
@@ -23,6 +25,7 @@ service UsersApi {
         GetMe
         GetUser
         GetMyProblemStatuses
+        RecordProblemStatus
     ]
     errors: [
         ValidationException
@@ -183,6 +186,28 @@ operation GetUser {
 
     errors: [
         NotFoundError
+        InternalServerError
+    ]
+}
+
+@documentation("Registra o actualiza el estado de progreso del usuario autenticado para un problema. Operación interna invocada por el juez tras emitir el veredicto final. El estado solo avanza: ATTEMPTED nunca sobreescribe SOLVED.")
+@internal
+@idempotent
+@http(method: "PUT", uri: "/v1/users/me/problem-statuses/{problemId}", code: 204)
+operation RecordProblemStatus {
+    input := {
+        @required
+        @httpLabel
+        problemId: ProblemId
+
+        @required
+        status: UserProblemStatus
+    }
+
+    output := {}
+
+    errors: [
+        UnauthorizedError
         InternalServerError
     ]
 }
