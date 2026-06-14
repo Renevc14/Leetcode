@@ -30,7 +30,7 @@
     "contests-service-openapi": {
       "plugins": {
         "openapi": {
-          "service": "com.leetcode.contests#ContestsService",
+          "service": "leetcode.contests#ContestsApi",
           "protocol": "aws.protocols#restJson1",
           "version": "3.1.0"
         }
@@ -105,13 +105,13 @@
         {
           "name": "includeServices",
           "args": {
-            "services": ["com.leetcode.contests#ContestsService"]
+            "services": ["leetcode.contests#ContestsApi"]
           }
         }
       ],
       "plugins": {
         "typescript-server-codegen": {
-          "package": "@com.leetcode/contests-api-server",
+          "package": "@leetcode/contests-server-sdk",
           "packageVersion": "0.0.1",
           "packageManager": "pnpm",
           "packageJson": {
@@ -125,13 +125,13 @@
         {
           "name": "includeServices",
           "args": {
-            "services": ["com.leetcode.contests#ContestsService"]
+            "services": ["leetcode.contests#ContestsApi"]
           }
         }
       ],
       "plugins": {
         "typescript-client-codegen": {
-          "package": "@com.leetcode/contests-api-client",
+          "package": "@leetcode/contests-client-sdk",
           "packageVersion": "0.0.1",
           "packageManager": "pnpm",
           "packageJson": {
