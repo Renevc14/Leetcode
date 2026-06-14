@@ -5,12 +5,14 @@ import { ExecuteCommand, type ExecutionStatus } from '@leetcode/executor-client-
 import type { SubmissionStatus } from '@leetcode/submissions-server-sdk';
 import { ProblemsApiClient } from '@leetcode/problems-client-sdk';
 import { ExecutorApiClient } from '@leetcode/executor-client-sdk';
+import { UsersApiClient, RecordProblemStatusCommand } from '@leetcode/users-client-sdk';
 import { prisma } from './persistence/prisma/client.js';
 import { PrismaSubmissionsRepository } from './persistence/prisma/submissions-repository.js';
 
 const REDIS_URL = process.env['REDIS_URL'] ?? 'redis://localhost:6379';
 const EXECUTOR_URL = process.env['EXECUTOR_URL'] ?? 'http://localhost:3005';
 const PROBLEMS_URL = process.env['PROBLEMS_URL'] ?? 'http://localhost:3001';
+const USERS_URL = process.env['USERS_URL'] ?? 'http://localhost:3004';
 const WORKER_CONCURRENCY = parseInt(process.env['WORKER_CONCURRENCY'] ?? '4', 10);
 
 const repository = new PrismaSubmissionsRepository(prisma);
@@ -73,6 +75,20 @@ const worker = new Worker<JudgeJobData>(
         actualOutput: r.actualOutput,
       })),
     });
+
+    const problemStatus = result.status === 'ACCEPTED' ? 'SOLVED' : 'ATTEMPTED';
+    const usersClient = new UsersApiClient({ endpoint: USERS_URL, token: tokenIdentity });
+    console.log(tokenIdentity);
+    await usersClient
+      .send(
+        new RecordProblemStatusCommand({ problemId: submission.problemId, status: problemStatus }),
+      )
+      .catch((err: unknown) => {
+        console.error(
+          `[judge-worker] Failed to record problem status for submission ${submissionId}:`,
+          err,
+        );
+      });
   },
   {
     connection: { url: REDIS_URL },

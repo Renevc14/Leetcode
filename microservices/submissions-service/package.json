@@ -26,6 +26,7 @@
     "@leetcode/executor-client-sdk": "workspace:*",
     "@leetcode/problems-client-sdk": "workspace:*",
     "@leetcode/submissions-server-sdk": "workspace:*",
+    "@leetcode/users-client-sdk": "workspace:*",
     "@prisma/adapter-pg": "^7.8.0",
     "@prisma/client": "^7.8.0",
     "bullmq": "^5.56.3",
