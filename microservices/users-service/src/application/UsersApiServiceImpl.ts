@@ -36,11 +36,21 @@ export class UsersApiServiceImpl implements UsersApiService<UsersContext> {
 
   async GetMe(_input: GetMeServerInput, ctx: UsersContext): Promise<GetMeServerOutput> {
     return this.handleErrors(async () => {
-      const authentikId = requireAuth(ctx.principal);
+      const principal = ctx.principal;
+      const authentikId = requireAuth(principal);
 
-      const user = await ctx.usersRepository.findById(authentikId);
+      let user = await ctx.usersRepository.findById(authentikId);
       if (!user) {
-        throw new UnauthorizedError({ message: 'Authenticated user not found.' });
+        const email = principal!.email ?? `${authentikId}@local`;
+        const displayName = principal!.name ?? email.split('@')[0]!;
+        const userName =
+          displayName.replace(/[^a-zA-Z0-9_-]+/g, '_').slice(0, 32) || authentikId.slice(0, 8);
+        user = await ctx.usersRepository.upsertFromAuth({
+          id: authentikId,
+          email,
+          displayName,
+          userName,
+        });
       }
 
       return toGetMeOutput(user);

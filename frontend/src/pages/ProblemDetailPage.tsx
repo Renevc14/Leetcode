@@ -132,6 +132,7 @@ export function ProblemDetailPage() {
   // Si el lenguaje seleccionado no está permitido en este problema, usar el primero.
   useEffect(() => {
     if (problem && !allowedLanguages.includes(language)) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect
       setLanguage(allowedLanguages[0]!);
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -159,9 +160,9 @@ export function ProblemDetailPage() {
         language: TO_SUBMISSION_LANGUAGE[language],
         sourceCode: code,
       }),
-    onSuccess: ({ submissionId }) => {
+    onSuccess: () => {
       setActiveKind('run');
-      setActiveSubmissionId(submissionId);
+      setActiveSubmissionId(null);
       setResultsOpen(true);
     },
   });
@@ -385,6 +386,12 @@ export function ProblemDetailPage() {
               <div className="text-sm text-lc-red">
                 {extractErrorMessage(runMutation.error ?? submitMutation.error)}
               </div>
+            ) : activeKind === 'run' && runMutation.isPending ? (
+              <div className="flex items-center gap-2 text-sm text-lc-muted">
+                <Loader2 className="h-4 w-4 animate-spin text-lc-orange" /> Running…
+              </div>
+            ) : activeKind === 'run' && runMutation.data ? (
+              <VerdictBanner submission={runMutation.data} />
             ) : !activeSubmissionId ? (
               <div className="text-sm text-lc-muted">
                 Run or submit your code to see results here.

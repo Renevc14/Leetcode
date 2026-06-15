@@ -1,5 +1,5 @@
 import Dockerode from 'dockerode';
-import { Readable, Writable } from 'stream';
+import { Writable } from 'stream';
 
 export interface RunResult {
   stdout: string;
@@ -10,7 +10,7 @@ export interface RunResult {
   oomKilled: boolean;
 }
 
-const MAX_OUTPUT_BYTES = 21000; // slightly over 20000 char limit to detect excess
+const MAX_OUTPUT_BYTES = 21000;
 
 const docker = new Dockerode();
 
@@ -38,7 +38,7 @@ export class ContainerRunner {
         MemorySwap: this.memoryLimitMb * 1024 * 1024,
         NanoCpus: Math.round(parseFloat(this.cpus) * 1e9),
         PidsLimit: 128,
-        ReadonlyRootfs: false, // must be false to write source into /work tmpfs
+        ReadonlyRootfs: false,
         Tmpfs: { '/work': 'rw,exec,size=128m,uid=1000,gid=1000' },
         CapDrop: ['ALL'],
         SecurityOpt: ['no-new-privileges'],
@@ -57,22 +57,42 @@ export class ContainerRunner {
 
     this.containerId = container.id;
     await container.start();
-    await this.exec(['sh', '-c', `cat > /work/${sourceFile}`], sourceCode, 5000);
+
+    const codeB64 = Buffer.from(sourceCode, 'utf-8').toString('base64');
+    const writeRes = await this.execRaw(
+      ['sh', '-c', `echo "${codeB64}" | base64 -d > /work/${sourceFile}`],
+      5000,
+    );
+    if (writeRes.exitCode !== 0) {
+      throw new Error(`Failed to write source: ${writeRes.stderr}`);
+    }
   }
 
   async exec(cmd: string[], stdin: string, timeLimitMs: number): Promise<RunResult> {
+    if (!this.containerId) throw new Error('Container not started');
+
+    if (stdin.length === 0) {
+      return this.execRaw(cmd, timeLimitMs);
+    }
+
+    const inputB64 = Buffer.from(stdin, 'utf-8').toString('base64');
+    const cmdStr = cmd.map((s) => `'${s.replace(/'/g, `'"'"'`)}'`).join(' ');
+    const wrapped = ['sh', '-c', `echo "${inputB64}" | base64 -d | ${cmdStr}`];
+    return this.execRaw(wrapped, timeLimitMs);
+  }
+
+  private async execRaw(cmd: string[], timeLimitMs: number): Promise<RunResult> {
     if (!this.containerId) throw new Error('Container not started');
     const container = docker.getContainer(this.containerId);
 
     const exec = await container.exec({
       Cmd: cmd,
-      AttachStdin: true,
       AttachStdout: true,
       AttachStderr: true,
       Tty: false,
     });
 
-    const stream = await exec.start({ hijack: true, stdin: true });
+    const stream = await exec.start({ hijack: true, stdin: false });
 
     const stdoutChunks: Buffer[] = [];
     const stderrChunks: Buffer[] = [];
@@ -101,13 +121,6 @@ export class ContainerRunner {
     });
 
     const startMs = Date.now();
-
-    if (stdin.length > 0) {
-      const stdinStream = Readable.from([stdin]);
-      stdinStream.pipe(stream, { end: true });
-    } else {
-      (stream as unknown as { end: () => void }).end();
-    }
 
     let timedOut = false;
     const timeout = setTimeout(() => {
@@ -175,6 +188,6 @@ export async function removeOrphanedContainers(labelPrefix: string): Promise<voi
       ),
     );
   } catch {
-    // non-fatal; Docker may not be running yet
+    // non-fatal
   }
 }

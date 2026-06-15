@@ -18,10 +18,8 @@ const server = createServer(
     }
 
     const httpRequest = convertRequest(req);
-    const ctx = createRequestContext(req);
-
-    void serviceHandler
-      .handle(httpRequest, ctx)
+    void createRequestContext(req)
+      .then((ctx) => serviceHandler.handle(httpRequest, ctx))
       .then((httpResponse) => {
         const response = httpResponse;
         if (response.body === undefined) response.body = '';

@@ -58,6 +58,7 @@ export function AdminProblemFormPage() {
   useEffect(() => {
     const problem = problemQuery.data;
     if (!problem) return;
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     setTitle(problem.title);
     setDifficulty(problem.difficulty);
     setStatementMarkdown(problem.statementMarkdown);

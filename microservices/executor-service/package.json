@@ -21,6 +21,7 @@
   "dependencies": {
     "@aws-smithy/server-node": "^1.0.0-alpha.10",
     "@leetcode/executor-server-sdk": "workspace:*",
-    "dockerode": "^4.0.4"
+    "dockerode": "^4.0.4",
+    "jose": "^6.2.3"
   }
 }

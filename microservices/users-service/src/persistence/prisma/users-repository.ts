@@ -1,6 +1,6 @@
 import type { PrismaClient } from '../../../generated/prisma/client.js';
 import type { UserAggregate, UserProblemStatusItem } from '../../domain/user.js';
-import type { UsersRepository } from '../../application/users-repository.js';
+import type { UpsertUserInput, UsersRepository } from '../../application/users-repository.js';
 
 function toDomain(
   user: Awaited<ReturnType<PrismaClient['user']['findUnique']>> & object,
@@ -27,6 +27,24 @@ export class PrismaUsersRepository implements UsersRepository {
   async findById(id: string): Promise<UserAggregate | null> {
     const user = await this.prisma.user.findUnique({ where: { id } });
     if (!user) return null;
+    return toDomain(user);
+  }
+
+  async upsertFromAuth(input: UpsertUserInput): Promise<UserAggregate> {
+    const user = await this.prisma.user.upsert({
+      where: { id: input.id },
+      create: {
+        id: input.id,
+        userName: input.userName,
+        displayName: input.displayName,
+        email: input.email,
+        isActive: true,
+      },
+      update: {
+        email: input.email,
+        displayName: input.displayName,
+      },
+    });
     return toDomain(user);
   }
 

@@ -11,9 +11,9 @@ export interface ExecutorContext {
 
 const semaphore = new Semaphore(config.maxConcurrentContainers);
 
-export function createRequestContext(req: IncomingMessage): ExecutorContext {
+export async function createRequestContext(req: IncomingMessage): Promise<ExecutorContext> {
   return {
     semaphore,
-    principal: extractPrincipal(req),
+    principal: await extractPrincipal(req),
   };
 }
