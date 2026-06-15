@@ -1,12 +1,19 @@
 import axios from 'axios';
-import { useAuthStore } from '@/store/useAuthStore';
+
+let tokenGetter: () => string | null = () => null;
+let unauthorizedHandler: () => void = () => {};
+
+export function configureAuth(getToken: () => string | null, onUnauthorized: () => void) {
+  tokenGetter = getToken;
+  unauthorizedHandler = onUnauthorized;
+}
 
 export const api = axios.create({
   headers: { 'Content-Type': 'application/json' },
 });
 
 api.interceptors.request.use((config) => {
-  const token = useAuthStore.getState().token;
+  const token = tokenGetter();
   if (token) {
     config.headers.Authorization = `Bearer ${token}`;
   }
@@ -17,7 +24,7 @@ api.interceptors.response.use(
   (response) => response,
   (error) => {
     if (error.response?.status === 401) {
-      useAuthStore.getState().logout();
+      unauthorizedHandler();
     }
     return Promise.reject(error);
   },

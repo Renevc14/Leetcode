@@ -1,22 +1,35 @@
-import { create } from 'zustand';
-import { persist } from 'zustand/middleware';
-import type { SessionUser } from '@/types';
+import { useAuth } from '@/auth/useAuth';
+import type { SessionUser, UserRole } from '@/types';
 
-interface AuthState {
+interface LegacyState {
   token: string | null;
   user: SessionUser | null;
-  login: (token: string, user: SessionUser) => void;
+  login: () => void;
   logout: () => void;
 }
 
-export const useAuthStore = create<AuthState>()(
-  persist(
-    (set) => ({
-      token: null,
-      user: null,
-      login: (token, user) => set({ token, user }),
-      logout: () => set({ token: null, user: null }),
-    }),
-    { name: 'leetclone-auth' },
-  ),
-);
+function shape(auth: ReturnType<typeof useAuth>): LegacyState {
+  const role: UserRole | undefined =
+    auth.roles.find((r): r is UserRole => r === 'ADMIN' || r === 'SETTER' || r === 'USER') ??
+    (auth.isAuthenticated ? 'USER' : undefined);
+  const user: SessionUser | null = auth.subject
+    ? {
+        id: auth.subject,
+        username: auth.username ?? auth.email ?? auth.subject,
+        ...(auth.email !== null ? { email: auth.email } : {}),
+        ...(role !== undefined ? { role } : {}),
+      }
+    : null;
+  return {
+    token: auth.token,
+    user,
+    login: auth.login,
+    logout: auth.logout,
+  };
+}
+
+export function useAuthStore<T = LegacyState>(selector?: (s: LegacyState) => T): T {
+  const auth = useAuth();
+  const s = shape(auth);
+  return selector ? selector(s) : (s as unknown as T);
+}

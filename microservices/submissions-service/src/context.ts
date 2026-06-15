@@ -26,8 +26,8 @@ const judgeQueue = new Queue('submissions-judge', {
   connection: { url: process.env['REDIS_URL'] ?? 'redis://localhost:6379' },
 });
 
-export function createRequestContext(req: IncomingMessage): SubmissionsContext {
-  const principal = extractPrincipal(req);
+export async function createRequestContext(req: IncomingMessage): Promise<SubmissionsContext> {
+  const principal = await extractPrincipal(req);
   const tokenConfig = principal?.token ? { token: { token: principal.token } } : {};
 
   return {

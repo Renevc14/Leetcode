@@ -20,8 +20,8 @@ const contestsRepository: ContestsRepository = new PrismaContestsRepository(pris
 const PROBLEMS_URL = process.env['PROBLEMS_URL'] ?? 'http://localhost:3001';
 const USERS_URL = process.env['USERS_URL'] ?? 'http://localhost:3004';
 
-export function createRequestContext(req: IncomingMessage): ContestsContext {
-  const principal = extractPrincipal(req);
+export async function createRequestContext(req: IncomingMessage): Promise<ContestsContext> {
+  const principal = await extractPrincipal(req);
   const tokenConfig = principal?.token ? { token: { token: principal.token } } : {};
 
   return {

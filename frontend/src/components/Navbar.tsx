@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from 'react';
 import { Link, NavLink, useNavigate } from 'react-router-dom';
 import { Code2, Plus } from 'lucide-react';
 import { useAuthStore } from '@/store/useAuthStore';
+import { useAuth } from '@/auth/useAuth';
 import { Avatar } from '@/components/Avatar';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
@@ -24,6 +25,7 @@ function NavItem({ to, label }: { to: string; label: string }) {
 
 export function Navbar() {
   const { user, logout } = useAuthStore();
+  const { login } = useAuth();
   const navigate = useNavigate();
   const [menuOpen, setMenuOpen] = useState(false);
   const menuRef = useRef<HTMLDivElement>(null);
@@ -108,14 +110,12 @@ export function Navbar() {
             </>
           ) : (
             <>
-              <Link to="/login">
-                <Button variant="ghost" size="sm">
-                  Sign In
-                </Button>
-              </Link>
-              <Link to="/register">
-                <Button size="sm">Sign Up</Button>
-              </Link>
+              <Button variant="ghost" size="sm" onClick={() => login()}>
+                Sign In
+              </Button>
+              <Button size="sm" onClick={() => login()}>
+                Sign Up
+              </Button>
             </>
           )}
         </div>

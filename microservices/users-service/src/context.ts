@@ -12,9 +12,9 @@ export interface UsersContext {
 
 const usersRepository = new PrismaUsersRepository(prisma);
 
-export function createRequestContext(req: IncomingMessage): UsersContext {
+export async function createRequestContext(req: IncomingMessage): Promise<UsersContext> {
   return {
     usersRepository,
-    principal: extractPrincipal(req),
+    principal: await extractPrincipal(req),
   };
 }

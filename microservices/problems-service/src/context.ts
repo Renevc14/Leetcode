@@ -17,8 +17,8 @@ const problemsRepository: ProblemsRepository = new PrismaProblemsRepository(pris
 
 const USERS_URL = process.env['USERS_URL'] ?? 'http://localhost:3004';
 
-export function createRequestContext(req: IncomingMessage): ProblemsContext {
-  const principal = extractPrincipal(req);
+export async function createRequestContext(req: IncomingMessage): Promise<ProblemsContext> {
+  const principal = await extractPrincipal(req);
   const tokenConfig = principal?.token ? { token: { token: principal.token } } : {};
 
   return {
