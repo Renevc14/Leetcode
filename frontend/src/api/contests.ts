@@ -50,7 +50,7 @@ function mapContest(c: BackendContest): Contest {
 
 export const contestsApi = {
   list: (params: { status?: ContestStatus; page?: number; pageSize?: number } = {}) =>
-    api.get<BackendList>('/api/contests', { params }).then(
+    api.get<BackendList>('/v1/contests', { params }).then(
       (r) =>
         ({
           items: r.data.items.map(mapContest),
@@ -60,11 +60,11 @@ export const contestsApi = {
     ),
 
   get: (contestId: string) =>
-    api.get<BackendContest>(`/api/contests/${contestId}`).then((r) => mapContest(r.data)),
+    api.get<BackendContest>(`/v1/contests/${contestId}`).then((r) => mapContest(r.data)),
 
   create: (data: ContestInput) =>
     api
-      .post<{ id: string; title: string; status: ContestStatus }>('/api/contests', {
+      .post<{ id: string; title: string; status: ContestStatus }>('/v1/contests', {
         slug: slugify(data.title),
         title: data.title,
         description: data.description,
@@ -75,16 +75,16 @@ export const contestsApi = {
       .then((r) => r.data),
 
   enroll: (contestId: string) =>
-    api.post<{ message: string }>(`/api/contests/${contestId}/enroll`, {}).then((r) => r.data),
+    api.post<{ message: string }>(`/v1/contests/${contestId}/enroll`, {}).then((r) => r.data),
 
   unenroll: (contestId: string) =>
-    api.delete<{ message: string }>(`/api/contests/${contestId}/enroll`).then((r) => r.data),
+    api.delete<{ message: string }>(`/v1/contests/${contestId}/enroll`).then((r) => r.data),
 
   problems: (contestId: string) =>
-    api.get<{ items: ContestProblem[] }>(`/api/contests/${contestId}/problems`).then((r) => r.data),
+    api.get<{ items: ContestProblem[] }>(`/v1/contests/${contestId}/problems`).then((r) => r.data),
 
   leaderboard: (contestId: string, params: { page?: number; pageSize?: number } = {}) =>
     api
-      .get<Paginated<LeaderboardEntry>>(`/api/contests/${contestId}/leaderboard`, { params })
+      .get<Paginated<LeaderboardEntry>>(`/v1/contests/${contestId}/leaderboard`, { params })
       .then((r) => r.data),
 };

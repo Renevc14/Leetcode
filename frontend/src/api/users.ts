@@ -8,10 +8,9 @@ import type { Me, PublicUser, UserStats } from '@/types';
  * (user-001 alice_dev, user-002 bob_setter, user-003 carol_admin).
  */
 export const usersApi = {
-  getMe: () => api.get<Me>('/api/users/me').then((r) => r.data),
+  getMe: () => api.get<Me>('/v1/users/me').then((r) => r.data),
 
-  getUser: (userId: string) => api.get<PublicUser>(`/api/users/${userId}`).then((r) => r.data),
+  getUser: (userId: string) => api.get<PublicUser>(`/v1/users/${userId}`).then((r) => r.data),
 
-  getStats: (userId: string) =>
-    api.get<UserStats>(`/api/users/${userId}/stats`).then((r) => r.data),
+  getStats: (userId: string) => api.get<UserStats>(`/v1/users/${userId}/stats`).then((r) => r.data),
 };

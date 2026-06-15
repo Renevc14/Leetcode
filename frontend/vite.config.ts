@@ -2,7 +2,6 @@ import { defineConfig } from 'vite';
 import react from '@vitejs/plugin-react';
 import { fileURLToPath, URL } from 'node:url';
 
-// https://vite.dev/config/
 export default defineConfig({
   plugins: [react()],
   resolve: {
@@ -12,25 +11,21 @@ export default defineConfig({
   },
   server: {
     proxy: {
-      '/api/users': {
+      '/v1/users': {
         target: 'http://localhost:3002',
         changeOrigin: true,
-        rewrite: (path) => path.replace(/^\/api/, '/v1'),
       },
-      '/api/problems': {
+      '/v1/problems': {
         target: 'http://localhost:3001',
         changeOrigin: true,
-        rewrite: (path) => path.replace(/^\/api/, '/v1'),
       },
-      '/api/submissions': {
+      '/v1/submissions': {
         target: 'http://localhost:3003',
         changeOrigin: true,
-        rewrite: (path) => path.replace(/^\/api/, '/v1'),
       },
-      '/api/contests': {
+      '/v1/contests': {
         target: 'http://localhost:3004',
         changeOrigin: true,
-        rewrite: (path) => path.replace(/^\/api/, '/v1'),
       },
     },
   },
