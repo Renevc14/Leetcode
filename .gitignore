@@ -25,6 +25,7 @@ out/
 .env
 .env.local
 .env.*.local
+.env.production
 !.env.example
 
 # Editor / OS
@@ -59,3 +60,11 @@ playwright/.cache/
 
 # Smithy generated code
 packages/*
+
+# Smithy gradle build artifacts (locales al checkout)
+microservices/*/.gradle/
+microservices/*/smithy/bin/
+microservices/*/smithy/build/
+
+# Quickstart de exploración Smithy (no es parte del producto)
+microservices/ts-quickstart-example/
