@@ -100,7 +100,7 @@ export const submissionsApi = {
     url.searchParams.set('_', String(Date.now()));
     return fetch(url.toString(), {
       method: 'POST',
-      cache: 'no-store',
+      cache: 'reload',
       credentials: 'omit',
       headers: {
         'Content-Type': 'application/json',
