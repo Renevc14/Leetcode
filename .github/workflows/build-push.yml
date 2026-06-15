@@ -26,6 +26,11 @@ env:
 jobs:
   build-and-push:
     name: build ${{ matrix.service }}
+    # Solo corre cuando la infra de AWS esta lista y el rol OIDC esta
+    # configurado en el secret AWS_DEPLOY_ROLE. Hasta entonces, los push a
+    # main no disparan builds (los manuales via workflow_dispatch sirven
+    # como override para forzar la corrida).
+    if: vars.AWS_CI_ENABLED == 'true' || github.event_name == 'workflow_dispatch'
     runs-on: ubuntu-latest
     strategy:
       fail-fast: false
