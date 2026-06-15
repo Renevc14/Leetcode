@@ -31,5 +31,6 @@ export function mapUnexpectedError(error: unknown): never {
     throw new NotFoundError({ message: 'Problem not found.' });
   }
 
+  console.error('[problems-service] unexpected error:', error);
   throw new InternalServerError({ message: 'Unexpected internal error.' });
 }
