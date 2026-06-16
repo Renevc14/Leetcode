@@ -25,16 +25,17 @@ COPY microservices/submissions-service/package.json ./microservices/submissions-
 COPY microservices/users-service/package.json ./microservices/users-service/
 COPY microservices/executor-service/package.json ./microservices/executor-service/
 
+# SDKs precompilados localmente (smithy build + tsc).
+COPY packages ./packages
+
 RUN pnpm install --frozen-lockfile
 
 COPY smithy ./smithy
 COPY microservices ./microservices
 
-RUN pnpm --filter @leetcode/smithy run smithy:build
-RUN pnpm -r --filter '@leetcode/*-sdk' run build
 RUN pnpm --filter @leetcode/executor-service run build
 
-RUN pnpm --filter @leetcode/executor-service deploy --prod /deploy
+RUN pnpm --filter @leetcode/executor-service deploy --prod --legacy /deploy
 
 # ─── Stage 2 · Runtime ────────────────────────────────────────────────────────
 FROM node:${NODE_VERSION} AS runtime
