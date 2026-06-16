@@ -66,8 +66,20 @@ export async function extractPrincipal(req: IncomingMessage): Promise<AuthPrinci
   }
 }
 
+// Mapeo scope -> roles que lo cubren. Authentik no siempre emite el claim
+// `scope` en el access token; aceptamos el role equivalente como fallback.
+const SCOPE_TO_ROLES: Record<string, string[]> = {
+  'problems:write': ['SETTER', 'ADMIN'],
+  'problems:admin': ['ADMIN'],
+  'submissions:write': ['USER', 'SETTER', 'ADMIN'],
+  'submissions:read': ['USER', 'SETTER', 'ADMIN'],
+};
+
 export function hasScope(principal: AuthPrincipal | null, scope: string): boolean {
-  return principal !== null && principal.scopes.includes(scope);
+  if (principal === null) return false;
+  if (principal.scopes.includes(scope)) return true;
+  const allowedRoles = SCOPE_TO_ROLES[scope] ?? [];
+  return principal.roles.some((r) => allowedRoles.includes(r));
 }
 
 export function hasRole(principal: AuthPrincipal | null, role: string): boolean {

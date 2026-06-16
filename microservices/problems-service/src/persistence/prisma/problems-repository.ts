@@ -168,7 +168,10 @@ export class PrismaProblemsRepository implements ProblemsRepository {
         difficulty: data.difficulty,
         timeLimitMs: data.timeLimitMs,
         memoryLimitMb: data.memoryLimitMb,
-        isPublished: false,
+        // Por default los problemas se crean publicados: la UI no tiene flujo
+        // draft/publish y el setter espera ver el problema en /problems al
+        // terminar de crearlo. Para "despublicar" se usa el endpoint UpdateProblem.
+        isPublished: true,
         isDeleted: false,
         testCases: {
           createMany: {
