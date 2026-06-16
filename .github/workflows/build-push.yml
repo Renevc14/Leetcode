@@ -67,7 +67,7 @@ jobs:
 
       - name: install Smithy CLI
         run: |
-          curl -L https://github.com/smithy-lang/smithy/releases/download/1.66.0/smithy-cli-linux-x86_64.zip -o /tmp/smithy.zip
+          curl -L https://github.com/smithy-lang/smithy/releases/download/1.71.0/smithy-cli-linux-x86_64.zip -o /tmp/smithy.zip
           unzip -q /tmp/smithy.zip -d /tmp/smithy
           sudo /tmp/smithy/smithy-cli-linux-x86_64/install
           smithy --version
