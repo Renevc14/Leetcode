@@ -4,6 +4,20 @@ Plataforma tipo LeetCode construida como sistema de microservicios. Resuelve **A
 
 > Proyecto de la materia **Arquitectura y Microservicios** (Maestría FullStack, UCB).
 
+## 🌐 Demo en vivo
+
+**URL pública**: <https://d34yeqq5e2ya2a.cloudfront.net>
+
+Desplegado en AWS `us-east-1` (CloudFront + ECS Fargate + RDS + Authentik).
+
+### Usuarios de prueba
+
+| Usuario       | Password   | Roles                     |
+| ------------- | ---------- | ------------------------- |
+| `test-admin`  | `Test123!` | `USER`, `SETTER`, `ADMIN` |
+| `test-setter` | `Test123!` | `USER`, `SETTER`          |
+| `test-user`   | `Test123!` | `USER`                    |
+
 ## Repos relacionados
 
 | Repo                                                         | Contiene                                          |
