@@ -9,14 +9,17 @@ const AUTHORITY =
 
 // Authentik responde 500 al discovery doc cuando el browser envia Origin con
 // CORS, asi que servimos la metadata estatica para evitar la llamada.
+// AUTHORITY tiene la forma "http://host[:port]/application/o/leetcode" — los
+// endpoints de authorize/token/userinfo/revoke viven a nivel /application/o.
+const AUTHENTIK_BASE = AUTHORITY.replace(/\/application\/o\/[^/]+\/?$/, '');
 const metadata = {
   issuer: `${AUTHORITY}/`,
-  authorization_endpoint: 'http://localhost:9000/application/o/authorize/',
-  token_endpoint: 'http://localhost:9000/application/o/token/',
-  userinfo_endpoint: 'http://localhost:9000/application/o/userinfo/',
+  authorization_endpoint: `${AUTHENTIK_BASE}/application/o/authorize/`,
+  token_endpoint: `${AUTHENTIK_BASE}/application/o/token/`,
+  userinfo_endpoint: `${AUTHENTIK_BASE}/application/o/userinfo/`,
   end_session_endpoint: `${AUTHORITY}/end-session/`,
   jwks_uri: `${AUTHORITY}/jwks/`,
-  revocation_endpoint: 'http://localhost:9000/application/o/revoke/',
+  revocation_endpoint: `${AUTHENTIK_BASE}/application/o/revoke/`,
 };
 
 export const oidcConfig: AuthProviderProps = {

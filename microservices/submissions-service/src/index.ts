@@ -5,6 +5,11 @@ import { convertRequest, writeResponse } from '@aws-smithy/server-node';
 import { createRequestContext } from './context.js';
 import { SubmissionsApiServiceImpl } from './application/SubmissionsApiServiceImpl.js';
 
+// Co-locamos el worker BullMQ en el mismo proceso del API server para evitar
+// tener que correr un Fargate service aparte solo para el judge.
+// import dispara la inicializacion del Worker que escucha la queue.
+import './worker.js';
+
 const rawPort = process.env['PORT'];
 const PORT = rawPort ? parseInt(rawPort, 10) : 3003;
 

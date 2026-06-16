@@ -17,8 +17,6 @@
   "devDependencies": {
     "@types/node": "^20.19.42",
     "@types/pg": "^8.20.0",
-    "dotenv": "^17.4.2",
-    "prisma": "^7.8.0",
     "tsx": "^4.22.4"
   },
   "dependencies": {
@@ -31,6 +29,8 @@
     "@prisma/client": "^7.8.0",
     "bullmq": "^5.56.3",
     "jose": "^6.2.3",
-    "pg": "^8.21.0"
+    "pg": "^8.21.0",
+    "dotenv": "^17.4.2",
+    "prisma": "^7.8.0"
   }
 }

@@ -8,6 +8,10 @@ export function configureAuth(getToken: () => string | null, onUnauthorized: () 
   unauthorizedHandler = onUnauthorized;
 }
 
+export function getCurrentToken(): string | null {
+  return tokenGetter();
+}
+
 export const api = axios.create({
   headers: { 'Content-Type': 'application/json' },
 });

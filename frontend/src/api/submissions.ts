@@ -1,5 +1,7 @@
-import { api } from './client';
+import { api, getCurrentToken } from './client';
 import type { Language, Paginated, Submission, SubmissionCode, Verdict } from '@/types';
+
+const tokenGetterRef = () => getCurrentToken();
 
 export interface SubmissionInput {
   problemId: string;
@@ -67,8 +69,10 @@ function mapVerdict(s?: string): Verdict | undefined {
 }
 
 function mapSubmission(s: BackendSubmission): Submission {
+  console.log('[submissions] mapSubmission input:', s);
   const verdict = mapVerdict(s.status);
   const isDone = !!verdict;
+  console.log('[submissions] verdict:', verdict, 'isDone:', isDone);
   const failedIdx = (s.testCaseResults ?? []).findIndex(
     (tc) => mapVerdict(tc.status) && mapVerdict(tc.status) !== 'AC',
   );
@@ -88,32 +92,49 @@ function mapSubmission(s: BackendSubmission): Submission {
 }
 
 export const submissionsApi = {
-  run: (data: Omit<SubmissionInput, 'contestId'>) =>
-    api
-      .post<BackendSubmission>('/api/submissions/run', {
+  run: (data: Omit<SubmissionInput, 'contestId'>) => {
+    // Usamos fetch nativo en vez de axios para descartar cualquier transform
+    // del response interceptor que esté convirtiendo el body en HTML.
+    // Bust de cache del browser y CF con cache: no-store + query param.
+    const url = new URL('/v1/submissions/run', window.location.origin);
+    url.searchParams.set('_', String(Date.now()));
+    return fetch(url.toString(), {
+      method: 'POST',
+      cache: 'reload',
+      credentials: 'omit',
+      headers: {
+        'Content-Type': 'application/json',
+        ...(tokenGetterRef() ? { Authorization: `Bearer ${tokenGetterRef()}` } : {}),
+      },
+      body: JSON.stringify({
         problemId: data.problemId,
         language: data.language,
         code: data.sourceCode,
-      })
-      .then((r) => {
-        const raw = r.data;
-        const synthetic: BackendSubmission = {
-          id: 'run-' + Date.now(),
-          userId: 'me',
-          problemId: data.problemId,
-          language: data.language,
-          status: raw.status,
-          timeMs: raw.timeMs,
-          memoryMb: raw.memoryMb,
-          testCaseResults: raw.testCaseResults,
-          errorMessage: raw.errorMessage,
-        };
-        return mapSubmission(synthetic);
       }),
+    }).then(async (resp) => {
+      const ct = resp.headers.get('content-type') || '';
+      console.log('[submissions] fetch status:', resp.status, 'content-type:', ct);
+      if (!resp.ok) throw new Error('HTTP ' + resp.status);
+      const raw = (await resp.json()) as BackendSubmission;
+      console.log('[submissions] fetch parsed:', raw);
+      const synthetic: BackendSubmission = {
+        id: 'run-' + Date.now(),
+        userId: 'me',
+        problemId: data.problemId,
+        language: data.language,
+        status: raw.status,
+        timeMs: raw.timeMs,
+        memoryMb: raw.memoryMb,
+        testCaseResults: raw.testCaseResults,
+        errorMessage: raw.errorMessage,
+      };
+      return mapSubmission(synthetic);
+    });
+  },
 
   submit: (data: SubmissionInput) =>
     api
-      .post<{ submissionId: string; status: string }>('/api/submissions', {
+      .post<{ submissionId: string; status: string }>('/v1/submissions', {
         problemId: data.problemId,
         language: data.language,
         code: data.sourceCode,
@@ -123,7 +144,7 @@ export const submissionsApi = {
 
   get: (submissionId: string) =>
     api
-      .get<BackendSubmission>(`/api/submissions/${submissionId}`)
+      .get<BackendSubmission>(`/v1/submissions/${submissionId}`)
       .then((r) => mapSubmission(r.data)),
 
   list: (
@@ -135,7 +156,7 @@ export const submissionsApi = {
       pageSize?: number;
     } = {},
   ) =>
-    api.get<BackendList>('/api/submissions', { params }).then(
+    api.get<BackendList>('/v1/submissions', { params }).then(
       (r) =>
         ({
           items: r.data.items.map(mapSubmission),
@@ -145,10 +166,11 @@ export const submissionsApi = {
     ),
 
   getCode: (submissionId: string) =>
-    api
-      .get<BackendSubmission>(`/api/submissions/${submissionId}`)
-      .then(
-        (r) =>
-          ({ code: r.data.code ?? '', language: r.data.language as Language }) as SubmissionCode,
-      ),
+    api.get<BackendSubmission>(`/v1/submissions/${submissionId}`).then(
+      (r) =>
+        ({
+          sourceCode: r.data.code ?? '',
+          language: r.data.language as Language,
+        }) as SubmissionCode,
+    ),
 };

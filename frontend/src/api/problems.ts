@@ -103,7 +103,7 @@ export const problemsApi = {
       pageSize?: number;
     } = {},
   ) =>
-    api.get<BackendPaginated<BackendProblem>>('/api/problems', { params }).then(
+    api.get<BackendPaginated<BackendProblem>>('/v1/problems', { params }).then(
       (r) =>
         ({
           items: r.data.items.map(mapSummary),
@@ -113,7 +113,7 @@ export const problemsApi = {
     ),
 
   get: (problemId: string) =>
-    api.get<BackendProblem>(`/api/problems/${problemId}`).then((r) => mapDetail(r.data)),
+    api.get<BackendProblem>(`/v1/problems/${problemId}`).then((r) => mapDetail(r.data)),
 
   create: (data: CreateProblemInput) => {
     const body = {
@@ -136,12 +136,12 @@ export const problemsApi = {
         explanation: '',
       })),
     };
-    return api.post<{ id: string }>('/api/problems', body).then((r) => r.data);
+    return api.post<{ id: string }>('/v1/problems', body).then((r) => r.data);
   },
 
   update: (problemId: string, data: Partial<CreateProblemInput>) =>
-    api.put<{ id: string }>(`/api/problems/${problemId}`, data).then((r) => r.data),
+    api.put<{ id: string }>(`/v1/problems/${problemId}`, data).then((r) => r.data),
 
   disable: (problemId: string) =>
-    api.patch<{ message: string }>(`/api/problems/${problemId}/disable`).then((r) => r.data),
+    api.patch<{ message: string }>(`/v1/problems/${problemId}/disable`).then((r) => r.data),
 };

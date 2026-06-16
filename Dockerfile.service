@@ -55,6 +55,9 @@ COPY --from=builder /deploy/node_modules ./node_modules
 COPY --from=builder /deploy/package.json ./package.json
 COPY --from=builder /deploy/generated ./generated
 COPY --from=builder /repo/microservices/${SERVICE}/prisma ./prisma
+# prisma.config.ts es requerido por Prisma 7 al correr migrate deploy.
+# Copiamos el .ts (Prisma lo carga via su propio loader).
+COPY --from=builder /repo/microservices/${SERVICE}/prisma.config.ts ./prisma.config.ts
 
 EXPOSE 8080
 

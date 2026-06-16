@@ -177,6 +177,9 @@ importers:
       pg:
         specifier: ^8.21.0
         version: 8.21.0
+      prisma:
+        specifier: ^7.8.0
+        version: 7.8.0(@types/react-dom@19.2.3(@types/react@19.2.17))(@types/react@19.2.17)(react-dom@19.2.7(react@19.2.7))(react@19.2.7)(typescript@6.0.3)
     devDependencies:
       '@types/node':
         specifier: ^20.19.42
@@ -184,9 +187,6 @@ importers:
       '@types/pg':
         specifier: ^8.20.0
         version: 8.20.0
-      prisma:
-        specifier: ^7.8.0
-        version: 7.8.0(@types/react-dom@19.2.3(@types/react@19.2.17))(@types/react@19.2.17)(react-dom@19.2.7(react@19.2.7))(react@19.2.7)(typescript@6.0.3)
       tsx:
         specifier: ^4.22.4
         version: 4.22.4
@@ -202,6 +202,9 @@ importers:
       dockerode:
         specifier: ^4.0.4
         version: 4.0.12
+      dotenv:
+        specifier: ^17.4.2
+        version: 17.4.2
       jose:
         specifier: ^6.2.3
         version: 6.2.3
@@ -212,9 +215,6 @@ importers:
       '@types/node':
         specifier: ^20.19.42
         version: 20.19.42
-      dotenv:
-        specifier: ^17.4.2
-        version: 17.4.2
       tsx:
         specifier: ^4.22.4
         version: 4.22.4
@@ -236,12 +236,18 @@ importers:
       '@prisma/client':
         specifier: ^7.8.0
         version: 7.8.0(prisma@7.8.0(@types/react-dom@19.2.3(@types/react@19.2.17))(@types/react@19.2.17)(react-dom@19.2.7(react@19.2.7))(react@19.2.7)(typescript@6.0.3))(typescript@6.0.3)
+      dotenv:
+        specifier: ^17.4.2
+        version: 17.4.2
       jose:
         specifier: ^6.2.3
         version: 6.2.3
       pg:
         specifier: ^8.21.0
         version: 8.21.0
+      prisma:
+        specifier: ^7.8.0
+        version: 7.8.0(@types/react-dom@19.2.3(@types/react@19.2.17))(@types/react@19.2.17)(react-dom@19.2.7(react@19.2.7))(react@19.2.7)(typescript@6.0.3)
     devDependencies:
       '@types/node':
         specifier: ^20.19.42
@@ -249,12 +255,6 @@ importers:
       '@types/pg':
         specifier: ^8.20.0
         version: 8.20.0
-      dotenv:
-        specifier: ^17.4.2
-        version: 17.4.2
-      prisma:
-        specifier: ^7.8.0
-        version: 7.8.0(@types/react-dom@19.2.3(@types/react@19.2.17))(@types/react@19.2.17)(react-dom@19.2.7(react@19.2.7))(react@19.2.7)(typescript@6.0.3)
       tsx:
         specifier: ^4.22.4
         version: 4.22.4
@@ -285,12 +285,18 @@ importers:
       bullmq:
         specifier: ^5.56.3
         version: 5.78.0
+      dotenv:
+        specifier: ^17.4.2
+        version: 17.4.2
       jose:
         specifier: ^6.2.3
         version: 6.2.3
       pg:
         specifier: ^8.21.0
         version: 8.21.0
+      prisma:
+        specifier: ^7.8.0
+        version: 7.8.0(@types/react-dom@19.2.3(@types/react@19.2.17))(@types/react@19.2.17)(react-dom@19.2.7(react@19.2.7))(react@19.2.7)(typescript@6.0.3)
     devDependencies:
       '@types/node':
         specifier: ^20.19.42
@@ -298,12 +304,6 @@ importers:
       '@types/pg':
         specifier: ^8.20.0
         version: 8.20.0
-      dotenv:
-        specifier: ^17.4.2
-        version: 17.4.2
-      prisma:
-        specifier: ^7.8.0
-        version: 7.8.0(@types/react-dom@19.2.3(@types/react@19.2.17))(@types/react@19.2.17)(react-dom@19.2.7(react@19.2.7))(react@19.2.7)(typescript@6.0.3)
       tsx:
         specifier: ^4.22.4
         version: 4.22.4
@@ -322,12 +322,18 @@ importers:
       '@prisma/client':
         specifier: ^7.8.0
         version: 7.8.0(prisma@7.8.0(@types/react-dom@19.2.3(@types/react@19.2.17))(@types/react@19.2.17)(react-dom@19.2.7(react@19.2.7))(react@19.2.7)(typescript@6.0.3))(typescript@6.0.3)
+      dotenv:
+        specifier: ^17.4.2
+        version: 17.4.2
       jose:
         specifier: ^6.2.3
         version: 6.2.3
       pg:
         specifier: ^8.21.0
         version: 8.21.0
+      prisma:
+        specifier: ^7.8.0
+        version: 7.8.0(@types/react-dom@19.2.3(@types/react@19.2.17))(@types/react@19.2.17)(react-dom@19.2.7(react@19.2.7))(react@19.2.7)(typescript@6.0.3)
     devDependencies:
       '@types/node':
         specifier: ^20.19.42
@@ -335,12 +341,6 @@ importers:
       '@types/pg':
         specifier: ^8.20.0
         version: 8.20.0
-      dotenv:
-        specifier: ^17.4.2
-        version: 17.4.2
-      prisma:
-        specifier: ^7.8.0
-        version: 7.8.0(@types/react-dom@19.2.3(@types/react@19.2.17))(@types/react@19.2.17)(react-dom@19.2.7(react@19.2.7))(react@19.2.7)(typescript@6.0.3)
       tsx:
         specifier: ^4.22.4
         version: 4.22.4
