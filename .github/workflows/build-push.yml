@@ -44,6 +44,33 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
+      # packages/ está gitignored; los SDKs Smithy se generan y compilan aquí
+      # para que el Dockerfile los pueda copiar.
+      - name: setup Java (Smithy CLI requires JVM)
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '21'
+
+      - name: setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+
+      - name: setup pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 11.3.0
+
+      - name: pnpm install
+        run: pnpm install --frozen-lockfile
+
+      - name: smithy build (genera SDKs + OpenAPI)
+        run: pnpm --filter @leetcode/smithy run smithy:build
+
+      - name: build SDKs TS
+        run: pnpm -r --filter '@leetcode/*-sdk' run build
+
       - uses: aws-actions/configure-aws-credentials@v4
         with:
           role-to-assume: ${{ secrets.AWS_DEPLOY_ROLE }}
